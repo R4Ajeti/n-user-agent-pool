@@ -32,12 +32,42 @@ class FakeChromeUserAgentPoolService:
                 self.cachedUserAgentList[0],
             ]
         )
+        self.randomCallDict = None
+        self.candidateCallDict = None
 
     def getCachedUserAgents(self):
         return list(self.cachedUserAgentList)
 
-    def random(self, channelStr=None):
+    def random(
+        self,
+        channelStr=None,
+        count=None,
+        platformFamilyList=None,
+        releaseChannelList=None,
+    ):
+        self.randomCallDict = {
+            "channelStr": channelStr,
+            "count": count,
+            "platformFamilyList": platformFamilyList,
+            "releaseChannelList": releaseChannelList,
+        }
         return self.selectedUserAgentStr
+
+    def getRandomCandidateUserAgentList(
+        self,
+        releaseChannelList=None,
+        count=None,
+        platformFamilyList=None,
+    ):
+        self.candidateCallDict = {
+            "releaseChannelList": releaseChannelList,
+            "count": count,
+            "platformFamilyList": platformFamilyList,
+        }
+        return [
+            self.selectedUserAgentStr,
+            self.cachedUserAgentList[0],
+        ]
 
 
 class VerboseChromeUserAgentPoolServiceTest(unittest.TestCase):
@@ -74,6 +104,47 @@ class VerboseChromeUserAgentPoolServiceTest(unittest.TestCase):
         self.assertIn("[cache] usable saved user-agent:", outputList[5])
         self.assertIn("[run] selected user-agent:", outputList[6])
         self.assertEqual("[run] took 9.064 seconds", outputList[7])
+
+    def testRunAcceptsRandomOptionParameters(self) -> None:
+        outputList = []
+        fakePoolService = FakeChromeUserAgentPoolService()
+        clockList = [10.0, 10.5]
+        service = VerboseChromeUserAgentPoolService(
+            chromeUserAgentPoolService=fakePoolService,
+            outputFunc=outputList.append,
+            perfCounterFunc=lambda: clockList.pop(0),
+        )
+
+        resultStr = service.run(
+            releaseChannelList=["Stable", "Canary"],
+            count=2,
+            platformFamilyList=["Linux"],
+            rankedCount=2,
+        )
+
+        self.assertEqual(fakePoolService.selectedUserAgentStr, resultStr)
+        self.assertEqual(
+            {
+                "channelStr": None,
+                "count": 2,
+                "platformFamilyList": ["Linux"],
+                "releaseChannelList": ["Stable", "Canary"],
+            },
+            fakePoolService.randomCallDict,
+        )
+        self.assertEqual(
+            {
+                "releaseChannelList": ["Stable", "Canary"],
+                "count": 2,
+                "platformFamilyList": ["Linux"],
+            },
+            fakePoolService.candidateCallDict,
+        )
+        self.assertEqual(2, len(service.rankedUserAgentList))
+        self.assertIn(
+            "[run] options: releaseChannels=Stable|Canary, count=2, platformFamilies=Linux, rankedCount=2",
+            outputList,
+        )
 
 
 if __name__ == "__main__":

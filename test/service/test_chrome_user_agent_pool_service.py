@@ -66,8 +66,19 @@ class FakeKeyValStoreProxy:
         return f"https://api.keyval.org/get/fake-{keyStr}"
 
 
+class FirstChoiceRandom:
+    def choice(self, valueList):
+        return valueList[0]
+
+
 class ChromeUserAgentPoolServiceTest(unittest.TestCase):
-    def buildService(self, versionList=None, keyValStore=None, shouldRaiseBool=False):
+    def buildService(
+        self,
+        versionList=None,
+        keyValStore=None,
+        shouldRaiseBool=False,
+        randomGenerator=None,
+    ):
         return ChromeUserAgentPoolService(
             chromeForTestingVersionProxy=FakeChromeForTestingVersionProxy(
                 versionList=versionList or [
@@ -78,7 +89,7 @@ class ChromeUserAgentPoolServiceTest(unittest.TestCase):
                 shouldRaiseBool=shouldRaiseBool,
             ),
             keyValStoreProxy=keyValStore or FakeKeyValStoreProxy(),
-            randomGenerator=random.Random(7),
+            randomGenerator=randomGenerator or random.Random(7),
         )
 
     def testLatestReturnsOneLatestUserAgentString(self) -> None:
@@ -117,6 +128,25 @@ class ChromeUserAgentPoolServiceTest(unittest.TestCase):
         service = self.buildService(keyValStore=keyValStore)
         userAgentStr = service.random()
         self.assertEqual(userAgentStr, keyValStore.store[KEY_VAL_LAST_RANDOM_USER_AGENT_KEY_STR])
+
+    def testRandomSupportsReleaseChannelCountAndPlatformOptions(self) -> None:
+        service = self.buildService(randomGenerator=FirstChoiceRandom())
+
+        userAgentStr = service.random(
+            releaseChannelList=["Stable", "Canary"],
+            count=1,
+            platformFamilyList=["Linux"],
+        )
+
+        self.assertIn("Chrome/152.0.7934.0", userAgentStr)
+        self.assertIn("Linux", userAgentStr)
+        self.assertNotIn("Windows NT", userAgentStr)
+
+    def testRandomRejectsAmbiguousChannelOptions(self) -> None:
+        service = self.buildService()
+
+        with self.assertRaises(ValueError):
+            service.random("Stable", releaseChannelList=["Beta"])
 
     def testServiceFallsBackToCachedKeyValDataWhenRemoteFails(self) -> None:
         cachedUserAgentStr = (

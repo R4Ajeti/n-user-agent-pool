@@ -97,15 +97,46 @@ class ChromeUserAgentPoolService:
         )
         return resultObject
 
-    def random(self, channelStr: str | None = None) -> str:
-        return self.runTimedOperation("random", lambda: self._random(channelStr))
+    def random(
+        self,
+        channelStr: str | None = None,
+        count: int | None = None,
+        platformFamilyList: str | Sequence[str] | None = None,
+        releaseChannelList: str | Sequence[str] | None = None,
+    ) -> str:
+        return self.runTimedOperation(
+            "random",
+            lambda: self._random(
+                channelStr,
+                count,
+                platformFamilyList,
+                releaseChannelList,
+            ),
+        )
 
-    def _random(self, channelStr: str | None = None) -> str:
-        logger.debug("Random user-agent requested channel=%s", channelStr)
-        if channelStr is None:
-            userAgentList = self.getFreshOrCachedUserAgents()
-        else:
-            userAgentList = self.getLatestByChannelUserAgentList(channelStr)
+    def _random(
+        self,
+        channelStr: str | None = None,
+        count: int | None = None,
+        platformFamilyList: str | Sequence[str] | None = None,
+        releaseChannelList: str | Sequence[str] | None = None,
+    ) -> str:
+        cleanReleaseChannelList = self.resolveRandomReleaseChannelList(
+            channelStr,
+            releaseChannelList,
+        )
+        logger.debug(
+            "Random user-agent requested channel=%s releaseChannelList=%s count=%s platformFamilyList=%s",
+            channelStr,
+            cleanReleaseChannelList,
+            count,
+            platformFamilyList,
+        )
+        userAgentList = self.getRandomCandidateUserAgentList(
+            releaseChannelList=cleanReleaseChannelList or None,
+            count=count,
+            platformFamilyList=platformFamilyList,
+        )
 
         if not userAgentList:
             raise ChromeUserAgentPoolUnavailableError(
@@ -144,8 +175,19 @@ class ChromeUserAgentPoolService:
         resultObject = self.latest(count)
         return self.buildResultWithTiming(resultObject)
 
-    def randomWithTiming(self, channelStr: str | None = None) -> dict[str, Any]:
-        resultObject = self.random(channelStr)
+    def randomWithTiming(
+        self,
+        channelStr: str | None = None,
+        count: int | None = None,
+        platformFamilyList: str | Sequence[str] | None = None,
+        releaseChannelList: str | Sequence[str] | None = None,
+    ) -> dict[str, Any]:
+        resultObject = self.random(
+            channelStr=channelStr,
+            count=count,
+            platformFamilyList=platformFamilyList,
+            releaseChannelList=releaseChannelList,
+        )
         return self.buildResultWithTiming(resultObject)
 
     def latestByChannel(
@@ -383,6 +425,67 @@ class ChromeUserAgentPoolService:
             raise ChromeUserAgentPoolUnavailableError(
                 "Chrome versions are unavailable and no cached user-agent pool exists."
             )
+
+    def getRandomCandidateUserAgentList(
+        self,
+        releaseChannelList: str | Sequence[str] | None = None,
+        count: int | None = None,
+        platformFamilyList: str | Sequence[str] | None = None,
+    ) -> list[str]:
+        cleanReleaseChannelList = self.normalizeReleaseChannelList(releaseChannelList)
+        cleanPlatformFamilyList = self.normalizePlatformFamilyList(platformFamilyList)
+
+        if cleanReleaseChannelList:
+            platformFragmentList = self.getPlatformFragmentListByFamilyList(
+                cleanPlatformFamilyList,
+            )
+            channelVersionMap = self._channelVersionMap()
+            missingChannelList = [
+                channelStr
+                for channelStr in cleanReleaseChannelList
+                if channelStr not in channelVersionMap
+            ]
+            if missingChannelList:
+                raise ChromeUserAgentPoolUnavailableError(
+                    "No Chrome version is available for channel(s): "
+                    f"{', '.join(missingChannelList)}."
+                )
+
+            userAgentList = self.generateUserAgents(
+                [channelVersionMap[channelStr] for channelStr in cleanReleaseChannelList],
+                platformFragmentList,
+            )
+            sourceStr = "channel"
+        else:
+            userAgentList = self.getFreshOrCachedUserAgents()
+            if cleanPlatformFamilyList:
+                userAgentList = self.filterUserAgentListByPlatformFamily(
+                    userAgentList,
+                    cleanPlatformFamilyList,
+                )
+            sourceStr = "freshOrCached"
+
+        if count is not None:
+            slicedUserAgentObject = self.sliceUserAgentResult(userAgentList, count)
+            if isinstance(slicedUserAgentObject, str):
+                userAgentList = [slicedUserAgentObject]
+            else:
+                userAgentList = slicedUserAgentObject
+
+        if not userAgentList:
+            raise ChromeUserAgentPoolUnavailableError(
+                "No valid Chrome user-agent strings match the requested random options."
+            )
+
+        logger.debug(
+            "Random candidate user-agent pool resolved source=%s releaseChannelList=%s count=%s platformFamilyList=%s candidatePoolSize=%s",
+            sourceStr,
+            cleanReleaseChannelList,
+            count,
+            cleanPlatformFamilyList,
+            len(userAgentList),
+        )
+        return userAgentList
 
     def getLatestByChannelUserAgentList(self, channelStr: str) -> list[str]:
         cleanChannelStr = self.normalizeChannel(channelStr)
@@ -840,6 +943,42 @@ class ChromeUserAgentPoolService:
 
         return list(userAgentList[:count])
 
+    def resolveRandomReleaseChannelList(
+        self,
+        channelStr: str | None,
+        releaseChannelList: str | Sequence[str] | None,
+    ) -> list[str]:
+        if channelStr is not None and releaseChannelList is not None:
+            raise ValueError("Use either channelStr or releaseChannelList, not both.")
+
+        if channelStr is not None:
+            return [self.normalizeChannel(channelStr)]
+
+        return self.normalizeReleaseChannelList(releaseChannelList)
+
+    def normalizeReleaseChannelList(
+        self,
+        releaseChannelList: str | Sequence[str] | None,
+    ) -> list[str]:
+        if releaseChannelList is None:
+            return []
+
+        rawChannelList = (
+            [releaseChannelList]
+            if isinstance(releaseChannelList, str)
+            else list(releaseChannelList)
+        )
+        if not rawChannelList:
+            raise ValueError("releaseChannelList must include at least one channel.")
+
+        cleanChannelList: list[str] = []
+        for channelStr in rawChannelList:
+            cleanChannelStr = self.normalizeChannel(channelStr)
+            if cleanChannelStr not in cleanChannelList:
+                cleanChannelList.append(cleanChannelStr)
+
+        return cleanChannelList
+
     def normalizeChannel(self, channelStr: str) -> str:
         if not isinstance(channelStr, str) or not channelStr.strip():
             raise ValueError("Chrome release channel must be a non-empty string.")
@@ -853,3 +992,78 @@ class ChromeUserAgentPoolService:
             "Unsupported Chrome release channel. "
             f"Use one of: {', '.join(CHROME_RELEASE_CHANNEL_LIST)}."
         )
+
+    def normalizePlatformFamilyList(
+        self,
+        platformFamilyList: str | Sequence[str] | None,
+    ) -> list[str]:
+        if platformFamilyList is None:
+            return []
+
+        rawPlatformFamilyList = (
+            [platformFamilyList]
+            if isinstance(platformFamilyList, str)
+            else list(platformFamilyList)
+        )
+        if not rawPlatformFamilyList:
+            raise ValueError(
+                "platformFamilyList must include at least one desktop platform family."
+            )
+
+        cleanPlatformFamilyList: list[str] = []
+        supportedPlatformFamilyMap = {
+            familyStr.lower(): familyStr
+            for familyStr in SUPPORTED_DESKTOP_PLATFORM_FRAGMENT_BY_FAMILY_DICT
+        }
+        for platformFamilyStr in rawPlatformFamilyList:
+            if not isinstance(platformFamilyStr, str) or not platformFamilyStr.strip():
+                raise ValueError(
+                    "Desktop platform family must be a non-empty string."
+                )
+
+            cleanPlatformFamilyStr = supportedPlatformFamilyMap.get(
+                platformFamilyStr.strip().lower()
+            )
+            if cleanPlatformFamilyStr is None:
+                raise ValueError(
+                    "Unsupported desktop platform family. "
+                    f"Use one of: {', '.join(SUPPORTED_DESKTOP_PLATFORM_FRAGMENT_BY_FAMILY_DICT)}."
+                )
+
+            if cleanPlatformFamilyStr not in cleanPlatformFamilyList:
+                cleanPlatformFamilyList.append(cleanPlatformFamilyStr)
+
+        return cleanPlatformFamilyList
+
+    def getPlatformFragmentListByFamilyList(
+        self,
+        platformFamilyList: Sequence[str],
+    ) -> list[str] | None:
+        if not platformFamilyList:
+            return None
+
+        platformFragmentList: list[str] = []
+        for platformFamilyStr in platformFamilyList:
+            platformFragmentList.extend(
+                SUPPORTED_DESKTOP_PLATFORM_FRAGMENT_BY_FAMILY_DICT[platformFamilyStr]
+            )
+
+        return platformFragmentList
+
+    def filterUserAgentListByPlatformFamily(
+        self,
+        userAgentList: Sequence[str],
+        platformFamilyList: Sequence[str],
+    ) -> list[str]:
+        if not platformFamilyList:
+            return list(userAgentList)
+
+        platformFamilySet = set(platformFamilyList)
+        return [
+            userAgentStr
+            for userAgentStr in userAgentList
+            if (
+                isValidChromeUserAgent(userAgentStr)
+                and getDesktopPlatformFamily(userAgentStr) in platformFamilySet
+            )
+        ]

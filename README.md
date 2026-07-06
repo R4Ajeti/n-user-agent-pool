@@ -22,6 +22,17 @@ print("Final selected user-agent:", verboseChromeUserAgentPoolService.finalValue
 print("Ranked user-agent list:", verboseChromeUserAgentPoolService.rankedUserAgentList)
 ```
 
+Customize the run when you want a narrower random pool:
+
+```python
+verboseChromeUserAgentPoolService.run(
+    releaseChannelList=["Stable", "Canary"],
+    count=6,
+    platformFamilyList=["Windows", "Linux"],
+    rankedCount=3,
+)
+```
+
 From this repository, the same flow is available through the example runner:
 
 ```bash
@@ -69,6 +80,8 @@ credential stuffing, account abuse, spam automation, or stealth workflow logic.
 - `random()` returns a random desktop Chrome user-agent string.
 - `random()` saves the last returned value and avoids returning the exact same
   full user-agent twice in a row when alternatives exist.
+- `random(...)` and the verbose `run(...)` support optional release-channel,
+  candidate-count, and desktop-platform filters.
 - Chrome versions are fetched from official Chrome for Testing JSON endpoints.
 - Remote failures fall back to cached Keyval or in-memory state when valid
   cached data exists.
@@ -125,6 +138,27 @@ userAgentStr = service.random()
 families. When more than one value is available, it avoids returning the exact
 same full user-agent string twice in a row.
 
+You can narrow the random candidate pool:
+
+```python
+userAgentStr = service.random(
+    releaseChannelList=["Stable", "Beta"],
+    count=10,
+    platformFamilyList=["macOS", "Linux"],
+)
+```
+
+Random options:
+
+| Parameter | Description |
+| --- | --- |
+| `channelStr` | Backward-compatible single release channel, such as `"Canary"`. |
+| `releaseChannelList` | One channel or a list of channels: `"Stable"`, `"Beta"`, `"Dev"`, `"Canary"`. |
+| `count` | Limits the candidate pool before choosing randomly. |
+| `platformFamilyList` | One family or a list of families: `"Windows"`, `"macOS"`, `"Linux"`. |
+
+Use either `channelStr` or `releaseChannelList`, not both.
+
 ## Channel-Aware Usage
 
 Use Chrome release channels when you need Stable, Beta, Dev, or Canary
@@ -174,6 +208,9 @@ latestListPayload = service.latestWithTiming(5)
 stablePayload = service.latestByChannelWithTiming("Stable")
 ```
 
+`randomWithTiming(...)` accepts the same optional random parameters as
+`random(...)`.
+
 You can also inspect timing after a normal call:
 
 ```python
@@ -185,6 +222,30 @@ timingHistory = service.timingHistory()
 
 Timing payloads include the operation name, duration in seconds and
 milliseconds, success state, error type, and completion timestamp.
+
+## Verbose Run Options
+
+`VerboseChromeUserAgentPoolService.run()` accepts the same random-pool filters
+and one display option:
+
+```python
+verboseChromeUserAgentPoolService.run(
+    channelStr="Beta",
+    count=5,
+    platformFamilyList="Windows",
+    rankedCount=5,
+)
+```
+
+`run(...)` parameters:
+
+| Parameter | Description |
+| --- | --- |
+| `channelStr` | Single Chrome release channel. Kept for simple calls and compatibility. |
+| `releaseChannelList` | One or more release channels for the random candidate pool. |
+| `count` | Maximum number of candidates considered before random selection. |
+| `platformFamilyList` | One or more desktop platform families to include. |
+| `rankedCount` | Number of values to keep in `rankedUserAgentList`; default is `5`. |
 
 ## Chrome Version Source
 
