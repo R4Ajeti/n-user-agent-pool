@@ -1,0 +1,5 @@
+{
+  "latestPatchVersionUrl": "https://googlechromelabs.github.io/chrome-for-testing/latest-patch-versions-per-build.json",
+  "lastKnownGoodVersionUrl": "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions.json",
+  "timeoutSecond": 10
+}

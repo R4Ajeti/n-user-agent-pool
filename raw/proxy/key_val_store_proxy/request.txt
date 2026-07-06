@@ -1,0 +1,23 @@
+Endpoint:
+${KEY_VAL_BASE_URL}/{hashedKey}
+
+Methods:
+GET
+PUT
+
+Headers:
+Content-Type: application/json
+Authorization: Bearer ${KEY_VAL_AUTH_TOKEN}
+
+Purpose:
+Read and write cached user-agent pool state from a Keyval-style remote key/value
+store. The proxy hashes descriptive project keys before placing them in the URL.
+
+Authentication:
+Use KEY_VAL_AUTH_TOKEN only when the selected Keyval provider requires a bearer
+token. Do not commit real tokens, API keys, or credentials.
+
+Stored values:
+- latest generated Chrome user-agent list
+- last random Chrome user-agent returned
+- latest Chrome release-channel version map

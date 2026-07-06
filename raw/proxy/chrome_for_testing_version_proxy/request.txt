@@ -1,0 +1,26 @@
+Endpoint:
+https://googlechromelabs.github.io/chrome-for-testing/latest-patch-versions-per-build.json
+
+Method:
+GET
+
+Headers:
+Accept: application/json
+User-Agent: n-user-agent-pool/0.1.0
+
+Purpose:
+Fetch the latest Chrome patch versions for known MAJOR.MINOR.BUILD combinations.
+The proxy maps the provider payload to an internal list of Chrome version strings.
+
+Additional endpoint:
+https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions.json
+
+Method:
+GET
+
+Purpose:
+Fetch latest known-good Chrome versions for release channels:
+Stable, Beta, Dev, and Canary.
+
+Authentication:
+No authentication is required for the public Chrome for Testing JSON endpoints.
