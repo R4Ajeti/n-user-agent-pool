@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "n-user-agent-pool"
-version = "0.1.0"
+version = "1.0.0"
 description = "Latest Chrome desktop user-agent pool with Chrome for Testing and optional Keyval persistence."
 readme = "README.md"
 requires-python = ">=3.10"
