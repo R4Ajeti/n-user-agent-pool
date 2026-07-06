@@ -41,6 +41,10 @@ The runner prints a compact discovery transcript: the hashed KeyVal storage
 key, log level, cache check, selected user-agent, elapsed time, and a small
 ranked list from the generated pool.
 
+`testUserAgentPool.py` is intentionally a small runner around
+`VerboseChromeUserAgentPoolService.run()`, then prints
+`finalValueStr` and `rankedUserAgentList`.
+
 Use deeper internal logs when you want to see version fetching, generation,
 fallback, KeyVal, and random-selection decisions:
 

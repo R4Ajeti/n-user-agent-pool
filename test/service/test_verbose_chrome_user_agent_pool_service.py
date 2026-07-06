@@ -1,7 +1,9 @@
 import os
 import unittest
 
-from testUserAgentPool import runUserAgentPoolDiscovery
+from core.service.verbose_chrome_user_agent_pool_service import (
+    VerboseChromeUserAgentPoolService,
+)
 
 
 class FakeChromeUserAgentPoolRepo:
@@ -34,30 +36,33 @@ class FakeChromeUserAgentPoolService:
     def getCachedUserAgents(self):
         return list(self.cachedUserAgentList)
 
-    def random(self):
+    def random(self, channelStr=None):
         return self.selectedUserAgentStr
 
 
-class UserAgentPoolRunnerTest(unittest.TestCase):
-    def testRunUserAgentPoolDiscoveryPrintsInfoStyleTranscript(self) -> None:
+class VerboseChromeUserAgentPoolServiceTest(unittest.TestCase):
+    def testRunSetsFinalValueAndRankedUserAgentList(self) -> None:
         previousLoggerStr = os.environ.get("LOGGER")
         os.environ["LOGGER"] = "INFO"
         outputList = []
         clockList = [10.0, 19.064]
 
         try:
-            selectedUserAgentStr = runUserAgentPoolDiscovery(
-                serviceFactory=FakeChromeUserAgentPoolService,
+            service = VerboseChromeUserAgentPoolService(
+                chromeUserAgentPoolService=FakeChromeUserAgentPoolService(),
                 outputFunc=outputList.append,
                 perfCounterFunc=lambda: clockList.pop(0),
             )
+            resultStr = service.run()
         finally:
             if previousLoggerStr is None:
                 os.environ.pop("LOGGER", None)
             else:
                 os.environ["LOGGER"] = previousLoggerStr
 
-        self.assertIn("Chrome/151.0.7922.10", selectedUserAgentStr)
+        self.assertEqual(service.finalValueStr, resultStr)
+        self.assertIn("Chrome/151.0.7922.10", service.finalValueStr)
+        self.assertEqual(2, len(service.rankedUserAgentList))
         self.assertEqual("=== User-agent pool discovery run ===", outputList[0])
         self.assertRegex(outputList[1], r"^\[run\] hashed storage key: [a-f0-9]{64}$")
         self.assertEqual("[run] log level: INFO", outputList[2])
@@ -69,8 +74,6 @@ class UserAgentPoolRunnerTest(unittest.TestCase):
         self.assertIn("[cache] usable saved user-agent:", outputList[5])
         self.assertIn("[run] selected user-agent:", outputList[6])
         self.assertEqual("[run] took 9.064 seconds", outputList[7])
-        self.assertIn("Final selected user-agent:", outputList[8])
-        self.assertIn("Ranked user-agent list:", outputList[9])
 
 
 if __name__ == "__main__":
