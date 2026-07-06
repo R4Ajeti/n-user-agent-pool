@@ -26,13 +26,14 @@ Expected output shape:
 
 ```text
 2026-07-06 17:45:00,000 INFO n_user_agent_pool: Last random Chrome user-agent Keyval location saved=True getUrl=https://api.keyval.org/get/eb2d215b030edc308327e3c77b5d8236997054581a92b89495a8ac06a55b2a0d chunkGetUrlList=['https://api.keyval.org/get/1d13a38cd8b1109d861236778f730c8c73712e843da45ea163650f6b879167e6', 'https://api.keyval.org/get/51b2579f32557055644b94e2a7b6f88bb935a19593319b098d4ffdb8d84123ce'] chromeVersion=152.0.7929.0 platformFamily=Linux
-2026-07-06 17:45:00,001 INFO n_user_agent_pool: Operation completed operation=random durationMillisecond=421.300 success=True errorType=None
+2026-07-06 17:45:00,001 INFO n_user_agent_pool: Operation completed operation=random durationSecond=0.42 success=True errorType=None
 Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.7929.0 Safari/537.36
 ```
 
 The first log line shows where the last random user-agent was saved in KeyVal.
-The second log line shows how long the call took. The final line is the actual
-user-agent string printed by `testUserAgentPool.py`.
+The second log line shows how long the call took in seconds with two decimal
+places. The final line is the actual user-agent string printed by
+`testUserAgentPool.py`.
 
 Use deeper internal logs when you want to see version fetching, generation,
 fallback, KeyVal, and random-selection decisions:
@@ -184,7 +185,7 @@ user_agent = service.random()
 timing = service.lastTiming()
 
 print(user_agent)
-print(timing["durationMillisecond"])
+print(timing["durationSecond"])
 ```
 
 Return the result and timing together:
@@ -197,7 +198,7 @@ service = ChromeUserAgentPoolService()
 payload = service.randomWithTiming()
 
 print(payload["result"])
-print(payload["timing"]["durationMillisecond"])
+print(payload["timing"]["durationSecond"])
 ```
 
 The same pattern is available for latest user agents:
@@ -213,13 +214,16 @@ Timing payload shape:
 ```python
 {
     "operation": "random",
-    "durationSecond": 0.123,
-    "durationMillisecond": 123.0,
+    "durationSecond": 0.12,
     "success": True,
     "errorType": None,
     "finishedAtUnixSecond": 1783332000.0,
 }
 ```
+
+`durationSecond` is rounded to two decimal places. A
+`durationMillisecond` compatibility field is still recorded in timing metadata
+for callers that need milliseconds.
 
 You can inspect all recorded timings for the current service instance:
 
@@ -245,7 +249,7 @@ and the total operation duration:
 
 ```text
 2026-07-06 17:45:00,000 INFO n_user_agent_pool: Last random Chrome user-agent Keyval location saved=True getUrl=https://api.keyval.org/get/eb2d215b030edc308327e3c77b5d8236997054581a92b89495a8ac06a55b2a0d chunkGetUrlList=['https://api.keyval.org/get/1d13a38cd8b1109d861236778f730c8c73712e843da45ea163650f6b879167e6', 'https://api.keyval.org/get/51b2579f32557055644b94e2a7b6f88bb935a19593319b098d4ffdb8d84123ce'] chromeVersion=152.0.7929.0 platformFamily=Linux
-2026-07-06 17:45:00,001 INFO n_user_agent_pool: Operation completed operation=random durationMillisecond=421.300 success=True errorType=None
+2026-07-06 17:45:00,001 INFO n_user_agent_pool: Operation completed operation=random durationSecond=0.42 success=True errorType=None
 Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.7929.0 Safari/537.36
 ```
 
@@ -269,7 +273,7 @@ Debug logs include safe operational details such as:
 - public KeyVal `get/<hashed-key>` URLs for saved values
 - whether Keyval values were read, missed, saved, or skipped
 - fallback from remote data to Keyval or in-memory cache
-- operation duration in milliseconds
+- operation duration in seconds with two decimal places
 
 The logs do not print `KEY_VAL_AUTH_TOKEN`, credentials, cookies, private keys,
 or authorization headers. Keyval URL logs are sanitized and still include the

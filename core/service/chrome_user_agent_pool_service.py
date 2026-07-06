@@ -733,10 +733,12 @@ class ChromeUserAgentPoolService:
         errorObject: Exception | None = None,
     ) -> None:
         durationSecondFloat = time.perf_counter() - startSecondFloat
+        roundedDurationSecondFloat = round(durationSecondFloat, 2)
+        roundedDurationMillisecondFloat = round(durationSecondFloat * 1000, 2)
         callTimingDict: dict[str, object] = {
             TIMING_OPERATION_JSON_KEY_STR: operationNameStr,
-            TIMING_DURATION_SECOND_JSON_KEY_STR: durationSecondFloat,
-            TIMING_DURATION_MILLISECOND_JSON_KEY_STR: durationSecondFloat * 1000,
+            TIMING_DURATION_SECOND_JSON_KEY_STR: roundedDurationSecondFloat,
+            TIMING_DURATION_MILLISECOND_JSON_KEY_STR: roundedDurationMillisecondFloat,
             TIMING_SUCCESS_BOOL_JSON_KEY_STR: errorObject is None,
             TIMING_ERROR_TYPE_JSON_KEY_STR: (
                 None if errorObject is None else type(errorObject).__name__
@@ -745,16 +747,16 @@ class ChromeUserAgentPoolService:
         }
         self.chromeUserAgentPoolRepo.saveCallTiming(callTimingDict)
         logger.info(
-            "Operation completed operation=%s durationMillisecond=%.3f success=%s errorType=%s",
+            "Operation completed operation=%s durationSecond=%.2f success=%s errorType=%s",
             operationNameStr,
-            durationSecondFloat * 1000,
+            roundedDurationSecondFloat,
             errorObject is None,
             None if errorObject is None else type(errorObject).__name__,
         )
         logger.debug(
-            "Operation timing recorded operation=%s durationMillisecond=%.3f success=%s errorType=%s",
+            "Operation timing recorded operation=%s durationSecond=%.2f success=%s errorType=%s",
             operationNameStr,
-            durationSecondFloat * 1000,
+            roundedDurationSecondFloat,
             errorObject is None,
             None if errorObject is None else type(errorObject).__name__,
         )

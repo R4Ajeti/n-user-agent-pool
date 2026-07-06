@@ -187,6 +187,10 @@ class ChromeUserAgentPoolServiceTest(unittest.TestCase):
         self.assertEqual("latest", timingDict[TIMING_OPERATION_JSON_KEY_STR])
         self.assertTrue(timingDict[TIMING_SUCCESS_BOOL_JSON_KEY_STR])
         self.assertGreaterEqual(timingDict[TIMING_DURATION_SECOND_JSON_KEY_STR], 0)
+        self.assertEqual(
+            round(timingDict[TIMING_DURATION_SECOND_JSON_KEY_STR], 2),
+            timingDict[TIMING_DURATION_SECOND_JSON_KEY_STR],
+        )
         self.assertGreaterEqual(timingDict[TIMING_DURATION_MILLISECOND_JSON_KEY_STR], 0)
 
     def testRandomWithTimingReturnsResultAndTiming(self) -> None:
@@ -245,7 +249,7 @@ class ChromeUserAgentPoolServiceTest(unittest.TestCase):
         self.assertIn("Last random Chrome user-agent Keyval location", logTextStr)
         self.assertIn("https://api.keyval.org/get/fake-", logTextStr)
         self.assertIn("Operation completed operation=random", logTextStr)
-        self.assertIn("durationMillisecond=", logTextStr)
+        self.assertRegex(logTextStr, r"durationSecond=\d+\.\d{2}")
 
 
 if __name__ == "__main__":
