@@ -23,6 +23,15 @@ class ChromeUserAgentPoolRepoTest(unittest.TestCase):
         versionMap["Stable"] = "1.0.0.0"
         self.assertEqual({"Stable": "150.0.7871.46"}, repo.getChannelVersionMap())
 
+    def testRepoStoresCallTimingCopy(self) -> None:
+        repo = ChromeUserAgentPoolRepo()
+        timingDict = {"operation": "latest", "durationSecond": 0.001}
+        repo.saveCallTiming(timingDict)
+        timingDict["operation"] = "random"
+
+        self.assertEqual("latest", repo.getLastCallTiming()["operation"])
+        self.assertEqual("latest", repo.getCallTimingList()[0]["operation"])
+
 
 if __name__ == "__main__":
     unittest.main()

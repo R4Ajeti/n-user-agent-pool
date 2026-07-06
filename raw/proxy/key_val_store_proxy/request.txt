@@ -1,11 +1,18 @@
-Endpoint:
+Default public KeyVal endpoints:
+https://api.keyval.org/get/{hashedKey}
+https://api.keyval.org/set/{hashedKey}/{value}
+
+Default public KeyVal methods:
+GET
+
+Custom store endpoint:
 ${KEY_VAL_BASE_URL}/{hashedKey}
 
-Methods:
+Custom store methods:
 GET
 PUT
 
-Headers:
+Custom store headers:
 Content-Type: application/json
 Authorization: Bearer ${KEY_VAL_AUTH_TOKEN}
 
@@ -13,11 +20,23 @@ Purpose:
 Read and write cached user-agent pool state from a Keyval-style remote key/value
 store. The proxy hashes descriptive project keys before placing them in the URL.
 
+Default behavior:
+If KEY_VAL_BASE_URL is not set, the proxy uses https://api.keyval.org and the
+public URL API. Debug logs print the public get URL, such as:
+
+https://api.keyval.org/get/{hashedKey}
+
+The public KeyVal URL API is useful for small values. A full desktop Chrome
+user-agent string can exceed the live public value limit, so the proxy saves it
+as chunks and stores a chunk marker at the base key. Large values, such as the
+full generated user-agent list, are skipped unless a custom store is configured.
+
 Authentication:
-Use KEY_VAL_AUTH_TOKEN only when the selected Keyval provider requires a bearer
-token. Do not commit real tokens, API keys, or credentials.
+The public https://api.keyval.org URL API does not require authentication.
+Use KEY_VAL_AUTH_TOKEN only when a custom Keyval provider requires a bearer token.
+Do not commit real tokens, API keys, or credentials.
 
 Stored values:
 - latest generated Chrome user-agent list
-- last random Chrome user-agent returned
+- last random Chrome user-agent returned, stored raw or chunked
 - latest Chrome release-channel version map
