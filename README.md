@@ -96,7 +96,7 @@ pip install -e .
 ## Basic Usage
 
 ```python
-from n_user_agent_pool import ChromeUserAgentPoolService
+from core import ChromeUserAgentPoolService
 
 service = ChromeUserAgentPoolService()
 
@@ -115,7 +115,7 @@ Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)
 Return one latest Chrome user-agent string:
 
 ```python
-from n_user_agent_pool import ChromeUserAgentPoolService
+from core import ChromeUserAgentPoolService
 
 service = ChromeUserAgentPoolService()
 
@@ -131,7 +131,7 @@ latest Stable channel version, use `latestByChannel("Stable")`.
 Return a list of the latest generated Chrome user-agent strings:
 
 ```python
-from n_user_agent_pool import ChromeUserAgentPoolService
+from core import ChromeUserAgentPoolService
 
 service = ChromeUserAgentPoolService()
 
@@ -146,7 +146,7 @@ pool; it returns every available value.
 Return a random Chrome user-agent string:
 
 ```python
-from n_user_agent_pool import ChromeUserAgentPoolService
+from core import ChromeUserAgentPoolService
 
 service = ChromeUserAgentPoolService()
 
@@ -177,7 +177,7 @@ generation, random selection when used, and state save attempts.
 Inspect the latest call timing:
 
 ```python
-from n_user_agent_pool import ChromeUserAgentPoolService
+from core import ChromeUserAgentPoolService
 
 service = ChromeUserAgentPoolService()
 
@@ -191,7 +191,7 @@ print(timing["durationSecond"])
 Return the result and timing together:
 
 ```python
-from n_user_agent_pool import ChromeUserAgentPoolService
+from core import ChromeUserAgentPoolService
 
 service = ChromeUserAgentPoolService()
 

@@ -28,4 +28,4 @@ classifiers = [
 dependencies = []
 
 [tool.setuptools.packages.find]
-include = ["core*", "n_user_agent_pool*"]
+include = ["core*"]
