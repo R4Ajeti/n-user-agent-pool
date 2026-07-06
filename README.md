@@ -25,15 +25,21 @@ LOGGER=INFO python testUserAgentPool.py
 Expected output shape:
 
 ```text
-2026-07-06 17:45:00,000 INFO n_user_agent_pool: Last random Chrome user-agent Keyval location saved=True getUrl=https://api.keyval.org/get/eb2d215b030edc308327e3c77b5d8236997054581a92b89495a8ac06a55b2a0d chunkGetUrlList=['https://api.keyval.org/get/1d13a38cd8b1109d861236778f730c8c73712e843da45ea163650f6b879167e6', 'https://api.keyval.org/get/51b2579f32557055644b94e2a7b6f88bb935a19593319b098d4ffdb8d84123ce'] chromeVersion=152.0.7929.0 platformFamily=Linux
-2026-07-06 17:45:00,001 INFO n_user_agent_pool: Operation completed operation=random durationSecond=0.42 success=True errorType=None
-Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.7929.0 Safari/537.36
+=== User-agent pool discovery run ===
+[run] hashed storage key: 6afea62a4fa12ba71f405a4f11932955e08ec5a6177ebd1c81aaf7b73e5c9689
+[run] log level: INFO
+[run] note: KeyVal is public; credentials are never stored
+[cache] checking saved user-agent list
+[cache] usable saved user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.7929.0 Safari/537.36
+[run] selected user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.7929.0 Safari/537.36
+[run] took 0.420 seconds
+Final selected user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.7929.0 Safari/537.36
+Ranked user-agent list: ['Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.7929.0 Safari/537.36', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.7929.0 Safari/537.36']
 ```
 
-The first log line shows where the last random user-agent was saved in KeyVal.
-The second log line shows how long the call took in seconds with two decimal
-places. The final line is the actual user-agent string printed by
-`testUserAgentPool.py`.
+The runner prints a compact discovery transcript: the hashed KeyVal storage
+key, log level, cache check, selected user-agent, elapsed time, and a small
+ranked list from the generated pool.
 
 Use deeper internal logs when you want to see version fetching, generation,
 fallback, KeyVal, and random-selection decisions:
@@ -244,13 +250,20 @@ For a concise runtime summary, use `LOGGER=INFO`:
 LOGGER=INFO python testUserAgentPool.py
 ```
 
-`LOGGER=INFO` prints the KeyVal URL where the last random user-agent was saved
-and the total operation duration:
+`LOGGER=INFO` prints the hashed KeyVal storage key, cache status, selected
+user-agent, and total operation duration in a compact run format:
 
 ```text
-2026-07-06 17:45:00,000 INFO n_user_agent_pool: Last random Chrome user-agent Keyval location saved=True getUrl=https://api.keyval.org/get/eb2d215b030edc308327e3c77b5d8236997054581a92b89495a8ac06a55b2a0d chunkGetUrlList=['https://api.keyval.org/get/1d13a38cd8b1109d861236778f730c8c73712e843da45ea163650f6b879167e6', 'https://api.keyval.org/get/51b2579f32557055644b94e2a7b6f88bb935a19593319b098d4ffdb8d84123ce'] chromeVersion=152.0.7929.0 platformFamily=Linux
-2026-07-06 17:45:00,001 INFO n_user_agent_pool: Operation completed operation=random durationSecond=0.42 success=True errorType=None
-Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.7929.0 Safari/537.36
+=== User-agent pool discovery run ===
+[run] hashed storage key: 6afea62a4fa12ba71f405a4f11932955e08ec5a6177ebd1c81aaf7b73e5c9689
+[run] log level: INFO
+[run] note: KeyVal is public; credentials are never stored
+[cache] checking saved user-agent list
+[cache] usable saved user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.7929.0 Safari/537.36
+[run] selected user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.7929.0 Safari/537.36
+[run] took 0.420 seconds
+Final selected user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.7929.0 Safari/537.36
+Ranked user-agent list: ['Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.7929.0 Safari/537.36', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.7929.0 Safari/537.36']
 ```
 
 Example:
@@ -352,8 +365,8 @@ last random user-agent like this:
 - The service reads the marker, loads each chunk, and joins the pieces back into
   the original user-agent string.
 
-When `LOGGER=INFO` is enabled, the saved location line includes both the base
-`getUrl` and the `chunkGetUrlList`:
+When service-level INFO logs are used outside the example runner, the saved
+location line includes both the base `getUrl` and the `chunkGetUrlList`:
 
 ```text
 getUrl=https://api.keyval.org/get/eb2d215b030edc308327e3c77b5d8236997054581a92b89495a8ac06a55b2a0d chunkGetUrlList=['https://api.keyval.org/get/1d13a38cd8b1109d861236778f730c8c73712e843da45ea163650f6b879167e6', 'https://api.keyval.org/get/51b2579f32557055644b94e2a7b6f88bb935a19593319b098d4ffdb8d84123ce']
