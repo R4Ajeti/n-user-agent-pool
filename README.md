@@ -2,110 +2,57 @@
 
 `n-user-agent-pool` is a small Python package for generating realistic desktop
 Chrome user-agent strings from current Chrome versions. It uses official Chrome
-for Testing data, keeps external calls behind proxy classes, and can persist
-the last random user-agent through a Keyval-style store.
+for Testing data, keeps external calls behind proxy classes, and can optionally
+persist cached state through a Keyval-style store.
+
+The project is for legitimate browser compatibility testing, infrastructure-safe
+test data generation, and reusable package architecture. It does not provide
+scraping evasion, CAPTCHA bypass, rate-limit bypass, credential stuffing,
+account abuse, spam automation, or stealth workflow logic.
 
 ## Quick Start
-
-Run the verbose service to discover, select, and inspect a ranked user-agent
-pool:
-
-```python
-from core.service.verbose_chrome_user_agent_pool_service import (
-    VerboseChromeUserAgentPoolService,
-)
-
-verboseChromeUserAgentPoolService = VerboseChromeUserAgentPoolService()
-verboseChromeUserAgentPoolService.run()
-
-print("Final selected user-agent:", verboseChromeUserAgentPoolService.finalValueStr)
-print("Ranked user-agent list:", verboseChromeUserAgentPoolService.rankedUserAgentList)
-```
-
-Customize the run when you want a narrower random pool:
-
-```python
-verboseChromeUserAgentPoolService.run(
-    releaseChannelList=["Stable", "Canary"],
-    count=6,
-    platformFamilyList=["Windows", "Linux"],
-    rankedCount=3,
-)
-```
-
-From this repository, the same flow is available through the example runner:
-
-```bash
-. ./activate
-LOGGER=INFO python testUserAgentPool.py
-```
-
-Use `LOGGER=DEBUG` when you want to inspect version fetching, user-agent
-generation, Keyval reads and writes, fallback decisions, random selection, and
-timing metadata.
-
-## Installation
-
-Install from GitHub:
-
-```bash
-pip install "git+https://github.com/R4Ajeti/n-user-agent-pool.git"
-```
-
-Install locally for development:
-
-```bash
-. ./activate
-pip install -e .
-```
-
-The package requires Python 3.10 or newer and has no required third-party
-runtime dependencies.
-
-## Purpose
-
-This project is designed for legitimate browser compatibility testing,
-infrastructure-safe test data generation, and reusable package architecture. It
-returns Chrome-compatible desktop user-agent strings across Windows, macOS, and
-Linux platform fragments.
-
-It does not provide scraping evasion, CAPTCHA bypass, rate-limit bypass,
-credential stuffing, account abuse, spam automation, or stealth workflow logic.
-
-## Features
-
-- `latest()` returns one latest generated Chrome user-agent string.
-- `latest(count)` returns up to `count` generated user-agent strings, ordered
-  from newest to older Chrome versions.
-- `random()` returns a random desktop Chrome user-agent string.
-- `random()` saves the last returned value and avoids returning the exact same
-  full user-agent twice in a row when alternatives exist.
-- `random(...)` and the verbose `run(...)` support optional release-channel,
-  candidate-count, and desktop-platform filters.
-- Chrome versions are fetched from official Chrome for Testing JSON endpoints.
-- Remote failures fall back to cached Keyval or in-memory state when valid
-  cached data exists.
-- Release-channel helpers support Stable, Beta, Dev, and Canary.
-- Timing helpers expose the elapsed duration and success state of public calls.
-- The codebase follows an N-layer structure: service, repo, proxy, helper, and
-  constant.
-
-## Basic Usage
 
 ```python
 from core import ChromeUserAgentPoolService
 
 service = ChromeUserAgentPoolService()
 
-userAgentStr = service.latest()
-print(userAgentStr)
+print(service.latest())
+print(service.latest(5))
+print(service.random())
 ```
+
+`latest()` returns one latest generated Chrome user-agent string. `latest(5)`
+returns up to five generated user-agent strings, ordered from newest to older
+Chrome versions. `random()` chooses across current Chrome versions and desktop
+platforms, saves the last returned value to configured state, and avoids
+returning the exact same full user-agent twice in a row when alternatives exist.
 
 Example output:
 
 ```text
 Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.7871.46 Safari/537.36
 ```
+
+## Installation
+
+Install from GitHub:
+
+```bash
+python3 -m pip install "git+https://github.com/R4Ajeti/n-user-agent-pool.git"
+```
+
+Install locally for development:
+
+```bash
+python3 -m venv env
+. env/bin/activate
+python3 -m pip install --upgrade pip
+python3 -m pip install -e .
+```
+
+The package requires Python 3.10 or newer and has no required third-party
+runtime dependencies.
 
 ## Public API
 
@@ -115,7 +62,6 @@ Return one latest user-agent string:
 from core import ChromeUserAgentPoolService
 
 service = ChromeUserAgentPoolService()
-
 userAgentStr = service.latest()
 ```
 
@@ -125,18 +71,11 @@ Return a list of generated user-agent strings:
 userAgentList = service.latest(5)
 ```
 
-`latest(count)` is safe when `count` is larger than the generated pool. It
-returns every available value.
-
 Return a random user-agent string:
 
 ```python
 userAgentStr = service.random()
 ```
-
-`random()` chooses across current Chrome versions and supported desktop platform
-families. When more than one value is available, it avoids returning the exact
-same full user-agent string twice in a row.
 
 You can narrow the random candidate pool:
 
@@ -159,94 +98,6 @@ Random options:
 
 Use either `channelStr` or `releaseChannelList`, not both.
 
-## Channel-Aware Usage
-
-Use Chrome release channels when you need Stable, Beta, Dev, or Canary
-versions explicitly:
-
-```python
-stableUserAgentStr = service.latestByChannel("Stable")
-betaUserAgentList = service.latestByChannel("Beta", count=3)
-canaryRandomUserAgentStr = service.random("Canary")
-```
-
-Inspect versions directly:
-
-```python
-latestVersionStr = service.latestVersion()
-stableVersionStr = service.latestVersion("Stable")
-channelVersionMap = service.channelVersionMap()
-```
-
-Inspect supported desktop platform fragments:
-
-```python
-platformMap = service.supportedPlatformList()
-```
-
-## Timing
-
-Every public generation and version call records timing metadata:
-
-```python
-from core import ChromeUserAgentPoolService
-
-service = ChromeUserAgentPoolService()
-
-payload = service.randomWithTiming()
-
-print(payload["result"])
-print(payload["timing"]["durationSecond"])
-```
-
-The same pattern is available for latest user agents and channel-aware user
-agents:
-
-```python
-latestPayload = service.latestWithTiming()
-latestListPayload = service.latestWithTiming(5)
-stablePayload = service.latestByChannelWithTiming("Stable")
-```
-
-`randomWithTiming(...)` accepts the same optional random parameters as
-`random(...)`.
-
-You can also inspect timing after a normal call:
-
-```python
-service.random()
-
-lastTiming = service.lastTiming()
-timingHistory = service.timingHistory()
-```
-
-Timing payloads include the operation name, duration in seconds and
-milliseconds, success state, error type, and completion timestamp.
-
-## Verbose Run Options
-
-`VerboseChromeUserAgentPoolService.run()` accepts the same random-pool filters
-and one display option:
-
-```python
-verboseChromeUserAgentPoolService.run(
-    channelStr="Beta",
-    count=5,
-    platformFamilyList="Windows",
-    rankedCount=5,
-)
-```
-
-`run(...)` parameters:
-
-| Parameter | Description |
-| --- | --- |
-| `channelStr` | Single Chrome release channel. Kept for simple calls and compatibility. |
-| `releaseChannelList` | One or more release channels for the random candidate pool. |
-| `count` | Maximum number of candidates considered before random selection. |
-| `platformFamilyList` | One or more desktop platform families to include. |
-| `rankedCount` | Number of values to keep in `rankedUserAgentList`; default is `5`. |
-
 ## Chrome Version Source
 
 The main source of truth is the official Chrome for Testing endpoint:
@@ -262,51 +113,67 @@ https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions.j
 ```
 
 Chrome for Testing calls are implemented only in
-`core/proxy/chrome_for_testing_version_proxy.py`. Services call that proxy
-instead of calling external URLs directly.
+`core/proxy/chrome_for_testing_version_proxy.py`. Services call
+that proxy instead of calling external URLs directly.
 
 ## Keyval Persistence
 
-Keyval persistence is optional for local development and useful when you want
-cross-process state for `random()` no-repeat behavior.
+Keyval persistence is opt-in. When `KEY_VAL_BASE_URL` is unset, reads return
+cache misses, writes are skipped, and `random()` still remembers the last value
+inside the in-memory repo for the current service instance.
 
-By default, the package uses public KeyVal storage:
-
-```text
-https://api.keyval.org
-```
-
-The package stores descriptive internal keys after hashing them with SHA-256.
-The stored values can include:
-
-- latest generated user-agent list
-- last random user-agent returned
-- latest Chrome release-channel version map
-
-Set these environment variables only when you want to use a custom
-Keyval-compatible provider:
+For a custom Keyval-compatible provider:
 
 ```bash
 export KEY_VAL_BASE_URL="https://your-keyval-provider.example/store"
 export KEY_VAL_AUTH_TOKEN="optional-bearer-token"
 ```
 
-Do not store secrets in public KeyVal. The package never prints
-`KEY_VAL_AUTH_TOKEN`, credentials, cookies, private keys, or authorization
-headers.
-
-## Logging
-
-The package is quiet by default. Set `LOGGER` to enable runtime logs:
+For public KeyVal, explicitly set both the public base URL and a namespace:
 
 ```bash
-LOGGER=INFO python testUserAgentPool.py
-LOGGER=DEBUG python testUserAgentPool.py
+export KEY_VAL_BASE_URL="https://api.keyval.org"
+export USER_AGENT_POOL_NAMESPACE="your-app-or-user-namespace"
 ```
 
-`LOGGER=INFO` prints a compact run summary. `LOGGER=DEBUG` prints safe
-operational details about Chrome for Testing fetches, generated pool size,
-selected random values, fallback behavior, hashed Keyval keys, and timing.
+The namespace is included in the hashed key so separate users do not share the
+same public KeyVal keys. Public KeyVal is not a trusted cache; use a private
+provider for stronger control. The package never prints `KEY_VAL_AUTH_TOKEN`,
+credentials, cookies, private keys, or authorization headers.
+
+Stored values can include:
+
+- latest generated Chrome user-agent list
+- last random user-agent returned
+- latest Chrome release-channel version map
+
+Large public KeyVal values are stored in chunks, including JSON payloads.
+
+## Diagnostics
+
+A verbose local runner is available when you want to inspect a ranked
+user-agent pool and safe operational logs:
+
+```bash
+LOGGER=INFO python3 example/user_agent_pool_example.py
+LOGGER=DEBUG python3 example/user_agent_pool_example.py
+```
+
+The verbose service can also be used directly:
+
+```python
+from core.service.verbose_chrome_user_agent_pool_service import (
+    VerboseChromeUserAgentPoolService,
+)
+
+verboseService = VerboseChromeUserAgentPoolService()
+verboseService.run(
+    releaseChannelList=["Stable", "Canary"],
+    count=6,
+    platformFamilyList=["Windows", "Linux"],
+    rankedCount=3,
+)
+```
 
 ## Architecture
 
@@ -335,15 +202,16 @@ Layer responsibilities:
 | `helper` | Generic reusable utility functions |
 | `constant` | Application constants only |
 
-Current structure:
+Current package structure:
 
 ```text
-core/
-  constant/
-  helper/
-  proxy/
-  service/
-  repo/
+user_agent_pool/
+  core/
+    constant/
+    helper/
+    proxy/
+    service/
+    repo/
 
 test/
   constant/
@@ -354,15 +222,9 @@ test/
 
 raw/
   proxy/
-
-skill/
 ```
 
-## Proxy Contract
-
-All external web API calls must go through `core/proxy/`.
-
-Each proxy implementation has matching safe raw examples:
+Every proxy implementation has matching safe raw examples:
 
 ```text
 raw/proxy/<proxy_name>/request.txt
@@ -370,29 +232,29 @@ raw/proxy/<proxy_name>/json/input.json
 raw/proxy/<proxy_name>/json/output.json
 ```
 
-The raw examples document request shape and expected payloads without storing
-credentials, tokens, private infrastructure details, or production request
-dumps.
-
 ## Testing
 
 Run the test suite from the repository root:
 
 ```bash
-. ./activate
-python -m unittest discover -s test -p "test_*.py"
+python3 -m unittest discover -s test -p "test_*.py"
 ```
 
 Tests use fakes and local fixtures. They do not require internet access, real
 Keyval credentials, paid external services, or live Chrome for Testing calls.
 
-## Development Notes
+Build a wheel locally:
 
-When contributing, keep these project rules intact:
+```bash
+python3 -m pip wheel . -w /tmp/n-user-agent-pool-wheel --no-deps
+```
+
+## Development Notes
 
 - Use singular folder and file naming.
 - Keep service, repo, proxy, helper, and constant responsibilities separated.
-- Keep public methods simple and centered on `ChromeUserAgentPoolService`.
+- Keep the stable public API centered on `ChromeUserAgentPoolService.latest()`
+  and `ChromeUserAgentPoolService.random()`.
 - Put external API behavior in proxy classes only.
 - Update matching `raw/proxy/` examples whenever a proxy contract changes.
 - Validate generated user-agent strings before returning them.

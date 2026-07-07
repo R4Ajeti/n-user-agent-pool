@@ -20,7 +20,9 @@ from core.constant.chrome_user_agent_pool_constant import (
     KEY_VAL_HTTP_POST_METHOD_STR,
     KEY_VAL_HTTP_PUT_METHOD_STR,
     KEY_VAL_JSON_CONTENT_TYPE_STR,
+    KEY_VAL_NAMESPACE_ENV_STR,
     KEY_VAL_PUBLIC_CHUNK_MARKER_PREFIX_STR,
+    KEY_VAL_PUBLIC_BASE_URL_STR,
     KEY_VAL_PUBLIC_VALUE_CHUNK_SIZE_INT,
     KEY_VAL_PUBLIC_VALUE_MAX_LENGTH_INT,
     KEY_VAL_SET_PATH_STR,
@@ -45,6 +47,7 @@ class KeyValStoreProxy:
         self,
         baseUrlStr: str | None = None,
         authTokenStr: str | None = None,
+        namespaceStr: str | None = None,
         timeoutSecondInt: int = DEFAULT_TIMEOUT_SECOND_INT,
     ) -> None:
         configureLoggerFromEnv(
@@ -60,12 +63,18 @@ class KeyValStoreProxy:
         self.authTokenStr = (
             os.getenv(KEY_VAL_AUTH_TOKEN_ENV_STR) if authTokenStr is None else authTokenStr
         )
+        self.namespaceStr = (
+            os.getenv(KEY_VAL_NAMESPACE_ENV_STR, "")
+            if namespaceStr is None
+            else namespaceStr
+        )
         self.timeoutSecondInt = timeoutSecondInt
         logger.debug(
-            "Keyval proxy initialized baseUrlConfigured=%s safeBaseUrl=%s publicUrlMode=%s tokenConfigured=%s timeoutSecond=%s",
+            "Keyval proxy initialized baseUrlConfigured=%s safeBaseUrl=%s publicUrlMode=%s namespaceConfigured=%s tokenConfigured=%s timeoutSecond=%s",
             bool(self.baseUrlStr),
             self.getSafeBaseUrlForLog(),
             self.isPublicKeyValUrlMode(),
+            self.hasNamespace(),
             bool(self.authTokenStr),
             self.timeoutSecondInt,
         )
@@ -78,10 +87,17 @@ class KeyValStoreProxy:
             )
             return None
 
+        if self.isPublicKeyValUrlMode() and not self.hasNamespace():
+            logger.debug(
+                "Keyval read skipped key=%s reason=USER_AGENT_POOL_NAMESPACE_not_configured",
+                keyStr,
+            )
+            return None
+
         logger.debug(
             "Keyval read start key=%s hashedKey=%s getUrl=%s",
             keyStr,
-            hashKeyValKey(keyStr),
+            self.hashKey(keyStr),
             self.buildSafeGetUrlForLog(keyStr),
         )
         requestObject = Request(
@@ -138,6 +154,13 @@ class KeyValStoreProxy:
             )
             return False
 
+        if self.isPublicKeyValUrlMode() and not self.hasNamespace():
+            logger.debug(
+                "Keyval write skipped key=%s reason=USER_AGENT_POOL_NAMESPACE_not_configured",
+                keyStr,
+            )
+            return False
+
         if self.isPublicKeyValUrlMode() and len(valueStr) > KEY_VAL_PUBLIC_VALUE_MAX_LENGTH_INT:
             logger.debug(
                 "Keyval public write skipped key=%s getUrl=%s reason=value_too_large charCount=%s maxCharCount=%s",
@@ -151,7 +174,7 @@ class KeyValStoreProxy:
         logger.debug(
             "Keyval write start key=%s hashedKey=%s getUrl=%s setUrl=%s byteCount=%s",
             keyStr,
-            hashKeyValKey(keyStr),
+            self.hashKey(keyStr),
             self.buildSafeGetUrlForLog(keyStr),
             self.buildSafeSetUrlForLog(keyStr),
             len(valueStr.encode("utf-8")),
@@ -161,7 +184,7 @@ class KeyValStoreProxy:
             requestObject = Request(
                 self.buildPublicSetApiUrl(),
                 data=json.dumps(
-                    {"key": hashKeyValKey(keyStr), "val": valueStr},
+                    {"key": self.hashKey(keyStr), "val": valueStr},
                     separators=(",", ":"),
                 ).encode("utf-8"),
                 method=KEY_VAL_HTTP_POST_METHOD_STR,
@@ -268,7 +291,7 @@ class KeyValStoreProxy:
         return chunkSavedBool and markerSavedBool
 
     def getJson(self, keyStr: str) -> Any:
-        valueStr = self.getValue(keyStr)
+        valueStr = self.getLargeValue(keyStr)
         if valueStr is None or valueStr == "":
             logger.debug("Keyval JSON read empty key=%s", keyStr)
             return None
@@ -288,18 +311,7 @@ class KeyValStoreProxy:
 
     def setJson(self, keyStr: str, valueObject: Any) -> bool:
         valueStr = json.dumps(valueObject, sort_keys=True, separators=(",", ":"))
-        if self.isPublicKeyValUrlMode() and len(valueStr) > KEY_VAL_PUBLIC_VALUE_MAX_LENGTH_INT:
-            logger.debug(
-                "Keyval public JSON write skipped key=%s getUrl=%s reason=value_too_large charCount=%s maxCharCount=%s valueType=%s",
-                keyStr,
-                self.buildSafeGetUrlForLog(keyStr),
-                len(valueStr),
-                KEY_VAL_PUBLIC_VALUE_MAX_LENGTH_INT,
-                type(valueObject).__name__,
-            )
-            return False
-
-        return self.setValue(keyStr, valueStr)
+        return self.setLargeValue(keyStr, valueStr)
 
     def buildHeaderDict(self, contentTypeStr: str | None = None) -> dict[str, str]:
         headerDict: dict[str, str] = {
@@ -322,7 +334,7 @@ class KeyValStoreProxy:
         if not self.baseUrlStr:
             raise KeyValStoreProxyError("KEY_VAL_BASE_URL is not configured.")
 
-        hashedKeyStr = hashKeyValKey(keyStr)
+        hashedKeyStr = self.hashKey(keyStr)
         if self.isPublicKeyValUrlMode():
             return (
                 f"{self.baseUrlStr.rstrip('/')}/"
@@ -335,12 +347,9 @@ class KeyValStoreProxy:
         if not self.baseUrlStr:
             raise KeyValStoreProxyError("KEY_VAL_BASE_URL is not configured.")
 
-        hashedKeyStr = hashKeyValKey(keyStr)
+        hashedKeyStr = self.hashKey(keyStr)
         if self.isPublicKeyValUrlMode():
-            return (
-                f"{self.baseUrlStr.rstrip('/')}/"
-                f"{KEY_VAL_SET_PATH_STR}/{quote(hashedKeyStr)}/{quote(valueStr, safe='')}"
-            )
+            return self.buildPublicSetApiUrl()
 
         return f"{self.baseUrlStr.rstrip('/')}/{quote(hashedKeyStr)}"
 
@@ -357,7 +366,13 @@ class KeyValStoreProxy:
         if not self.baseUrlStr:
             return False
 
-        return urlsplit(self.baseUrlStr).netloc == "api.keyval.org"
+        return urlsplit(self.baseUrlStr).netloc == urlsplit(KEY_VAL_PUBLIC_BASE_URL_STR).netloc
+
+    def hasNamespace(self) -> bool:
+        return isinstance(self.namespaceStr, str) and bool(self.namespaceStr.strip())
+
+    def hashKey(self, keyStr: str) -> str:
+        return hashKeyValKey(keyStr, namespaceStr=self.namespaceStr)
 
     def getSafeBaseUrlForLog(self) -> str | None:
         if not self.baseUrlStr:
@@ -380,10 +395,10 @@ class KeyValStoreProxy:
         if self.isPublicKeyValUrlMode():
             return (
                 f"{safeBaseUrlStr.rstrip('/')}/"
-                f"{KEY_VAL_GET_PATH_STR}/{quote(hashKeyValKey(keyStr))}"
+                f"{KEY_VAL_GET_PATH_STR}/{quote(self.hashKey(keyStr))}"
             )
 
-        return f"{safeBaseUrlStr.rstrip('/')}/{quote(hashKeyValKey(keyStr))}"
+        return f"{safeBaseUrlStr.rstrip('/')}/{quote(self.hashKey(keyStr))}"
 
     def buildSafeSetUrlForLog(self, keyStr: str) -> str | None:
         safeBaseUrlStr = self.getSafeBaseUrlForLog()
@@ -391,12 +406,9 @@ class KeyValStoreProxy:
             return None
 
         if self.isPublicKeyValUrlMode():
-            return (
-                f"{safeBaseUrlStr.rstrip('/')}/"
-                f"{KEY_VAL_SET_PATH_STR}/{quote(hashKeyValKey(keyStr))}/<value-redacted>"
-            )
+            return f"{safeBaseUrlStr.rstrip('/')}/{KEY_VAL_SET_PATH_STR}"
 
-        return f"{safeBaseUrlStr.rstrip('/')}/{quote(hashKeyValKey(keyStr))}"
+        return f"{safeBaseUrlStr.rstrip('/')}/{quote(self.hashKey(keyStr))}"
 
     def buildSafeChunkGetUrlListForLog(
         self,

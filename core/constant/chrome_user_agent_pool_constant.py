@@ -1,5 +1,6 @@
-CORE_LOGGER_NAME_STR = "n_user_agent_pool"
-PACKAGE_USER_AGENT_STR = "n-user-agent-pool/0.1.0"
+CORE_LOGGER_NAME_STR = "user_agent_pool"
+PACKAGE_VERSION_STR = "1.0.0"
+PACKAGE_USER_AGENT_STR = "n-user-agent-pool/1.0.0"
 LOGGER_LEVEL_ENV_STR = "LOGGER"
 LOGGER_FORMAT_STR = "%(asctime)s %(levelname)s %(name)s: %(message)s"
 
@@ -73,7 +74,9 @@ SUPPORTED_DESKTOP_PLATFORM_FRAGMENT_LIST = [
 
 KEY_VAL_BASE_URL_ENV_STR = "KEY_VAL_BASE_URL"
 KEY_VAL_AUTH_TOKEN_ENV_STR = "KEY_VAL_AUTH_TOKEN"
-KEY_VAL_DEFAULT_BASE_URL_STR = "https://api.keyval.org"
+KEY_VAL_NAMESPACE_ENV_STR = "USER_AGENT_POOL_NAMESPACE"
+KEY_VAL_DEFAULT_BASE_URL_STR = ""
+KEY_VAL_PUBLIC_BASE_URL_STR = "https://api.keyval.org"
 KEY_VAL_GET_PATH_STR = "get"
 KEY_VAL_SET_PATH_STR = "set"
 KEY_VAL_PUBLIC_VALUE_MAX_LENGTH_INT = 100
@@ -87,9 +90,9 @@ KEY_VAL_TEXT_CONTENT_TYPE_STR = "text/plain; charset=utf-8"
 KEY_VAL_AUTHORIZATION_HEADER_STR = "Authorization"
 KEY_VAL_KEY_HASH_ALGORITHM_STR = "sha256"
 
-KEY_VAL_USER_AGENT_LIST_KEY_STR = "n_user_agent_pool_latest_user_agent_list"
-KEY_VAL_LAST_RANDOM_USER_AGENT_KEY_STR = "n_user_agent_pool_last_random_user_agent"
-KEY_VAL_CHANNEL_VERSION_MAP_KEY_STR = "n_user_agent_pool_channel_version_map"
+KEY_VAL_USER_AGENT_LIST_KEY_STR = "user_agent_pool_latest_user_agent_list"
+KEY_VAL_LAST_RANDOM_USER_AGENT_KEY_STR = "user_agent_pool_last_random_user_agent"
+KEY_VAL_CHANNEL_VERSION_MAP_KEY_STR = "user_agent_pool_channel_version_map"
 
 USER_AGENT_LIST_JSON_KEY_STR = "userAgentList"
 USER_AGENT_JSON_KEY_STR = "userAgent"

@@ -27,5 +27,17 @@ classifiers = [
 ]
 dependencies = []
 
+[project.optional-dependencies]
+dev = [
+  "build>=1.2",
+  "twine>=5.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/R4Ajeti/n-user-agent-pool"
+Repository = "https://github.com/R4Ajeti/n-user-agent-pool"
+Issues = "https://github.com/R4Ajeti/n-user-agent-pool/issues"
+Changelog = "https://github.com/R4Ajeti/n-user-agent-pool/releases"
+
 [tool.setuptools.packages.find]
 include = ["core*"]

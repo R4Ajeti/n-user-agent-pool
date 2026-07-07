@@ -155,7 +155,7 @@ class ChromeUserAgentPoolServiceTest(unittest.TestCase):
         )
         keyValStore = FakeKeyValStoreProxy(
             {
-                "n_user_agent_pool_latest_user_agent_list": {
+                "user_agent_pool_latest_user_agent_list": {
                     "userAgentList": [cachedUserAgentStr]
                 }
             }
@@ -170,7 +170,7 @@ class ChromeUserAgentPoolServiceTest(unittest.TestCase):
         )
         keyValStore = FakeKeyValStoreProxy(
             {
-                "n_user_agent_pool_latest_user_agent_list": {
+                "user_agent_pool_latest_user_agent_list": {
                     "userAgentList": [cachedUserAgentStr]
                 }
             }

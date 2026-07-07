@@ -73,7 +73,11 @@ class FakeChromeUserAgentPoolService:
 class VerboseChromeUserAgentPoolServiceTest(unittest.TestCase):
     def testRunSetsFinalValueAndRankedUserAgentList(self) -> None:
         previousLoggerStr = os.environ.get("LOGGER")
+        previousKeyValBaseUrlStr = os.environ.get("KEY_VAL_BASE_URL")
+        previousNamespaceStr = os.environ.get("USER_AGENT_POOL_NAMESPACE")
         os.environ["LOGGER"] = "INFO"
+        os.environ.pop("KEY_VAL_BASE_URL", None)
+        os.environ.pop("USER_AGENT_POOL_NAMESPACE", None)
         outputList = []
         clockList = [10.0, 19.064]
 
@@ -89,6 +93,14 @@ class VerboseChromeUserAgentPoolServiceTest(unittest.TestCase):
                 os.environ.pop("LOGGER", None)
             else:
                 os.environ["LOGGER"] = previousLoggerStr
+            if previousKeyValBaseUrlStr is None:
+                os.environ.pop("KEY_VAL_BASE_URL", None)
+            else:
+                os.environ["KEY_VAL_BASE_URL"] = previousKeyValBaseUrlStr
+            if previousNamespaceStr is None:
+                os.environ.pop("USER_AGENT_POOL_NAMESPACE", None)
+            else:
+                os.environ["USER_AGENT_POOL_NAMESPACE"] = previousNamespaceStr
 
         self.assertEqual(service.finalValueStr, resultStr)
         self.assertIn("Chrome/151.0.7922.10", service.finalValueStr)
@@ -97,7 +109,7 @@ class VerboseChromeUserAgentPoolServiceTest(unittest.TestCase):
         self.assertRegex(outputList[1], r"^\[run\] hashed storage key: [a-f0-9]{64}$")
         self.assertEqual("[run] log level: INFO", outputList[2])
         self.assertEqual(
-            "[run] note: KeyVal is public; credentials are never stored",
+            "[run] note: KeyVal persistence is off unless KEY_VAL_BASE_URL is set",
             outputList[3],
         )
         self.assertEqual("[cache] checking saved user-agent list", outputList[4])

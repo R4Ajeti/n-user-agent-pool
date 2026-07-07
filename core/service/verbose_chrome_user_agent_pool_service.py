@@ -11,6 +11,8 @@ from core.constant.chrome_user_agent_pool_constant import (
     CORE_LOGGER_NAME_STR,
     KEY_VAL_BASE_URL_ENV_STR,
     KEY_VAL_DEFAULT_BASE_URL_STR,
+    KEY_VAL_NAMESPACE_ENV_STR,
+    KEY_VAL_PUBLIC_BASE_URL_STR,
     KEY_VAL_USER_AGENT_LIST_KEY_STR,
     LOGGER_LEVEL_ENV_STR,
     VERBOSE_RANKED_USER_AGENT_COUNT_INT,
@@ -74,7 +76,8 @@ class VerboseChromeUserAgentPoolService:
         startSecondFloat = self.perfCounterFunc()
         self.outputFunc("=== User-agent pool discovery run ===")
         self.outputFunc(
-            f"[run] hashed storage key: {hashKeyValKey(KEY_VAL_USER_AGENT_LIST_KEY_STR)}"
+            "[run] hashed storage key: "
+            f"{hashKeyValKey(KEY_VAL_USER_AGENT_LIST_KEY_STR, namespaceStr=self.getKeyValNamespace())}"
         )
         self.outputFunc(f"[run] log level: {self.getLoggerLevelName()}")
         self.outputFunc(f"[run] note: {self.getKeyValSafetyNote()}")
@@ -194,10 +197,18 @@ class VerboseChromeUserAgentPoolService:
 
     def getKeyValSafetyNote(self) -> str:
         baseUrlStr = os.getenv(KEY_VAL_BASE_URL_ENV_STR, KEY_VAL_DEFAULT_BASE_URL_STR)
-        if baseUrlStr.rstrip("/") == KEY_VAL_DEFAULT_BASE_URL_STR:
-            return "KeyVal is public; credentials are never stored"
+        if not baseUrlStr:
+            return "KeyVal persistence is off unless KEY_VAL_BASE_URL is set"
+
+        if baseUrlStr.rstrip("/") == KEY_VAL_PUBLIC_BASE_URL_STR:
+            if self.getKeyValNamespace():
+                return "Public KeyVal uses the configured namespace; credentials are never stored"
+            return "Public KeyVal is skipped until USER_AGENT_POOL_NAMESPACE is set"
 
         return "KeyVal credentials are never printed or stored"
+
+    def getKeyValNamespace(self) -> str:
+        return os.getenv(KEY_VAL_NAMESPACE_ENV_STR, "").strip()
 
     @contextmanager
     def maybeMutedCoreLogger(self) -> Iterator[None]:

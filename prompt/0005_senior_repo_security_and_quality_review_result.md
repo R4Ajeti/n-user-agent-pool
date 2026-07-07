@@ -59,7 +59,7 @@ Every default install can read and write the same public Keyval namespace. The s
 
 Recommended action:
 
-Make remote persistence opt-in by default. Use in-memory repo state when `KEY_VAL_BASE_URL` is unset. If public Keyval remains supported, require a namespace or salt such as `N_USER_AGENT_POOL_NAMESPACE`, hash `namespace + key`, and document that public Keyval is not a trusted cache. Consider storing metadata with source, version, and generated-at fields so fallback data can be validated more strongly.
+Make remote persistence opt-in by default. Use in-memory repo state when `KEY_VAL_BASE_URL` is unset. If public Keyval remains supported, require a namespace or salt such as `USER_AGENT_POOL_NAMESPACE`, hash `namespace + key`, and document that public Keyval is not a trusted cache. Consider storing metadata with source, version, and generated-at fields so fallback data can be validated more strongly.
 
 ### P1: The Activation Script Can Leak `.env` Values
 
@@ -106,7 +106,7 @@ Track `.gitignore`. Remove the `.gitignore` ignore entry or replace it with `!.g
 Evidence:
 
 - `pyproject.toml:30-31` packages `include = ["core*"]`.
-- The built wheel contains `n_user_agent_pool-1.0.0.dist-info/top_level.txt` with `core`.
+- The built wheel contains `core-1.0.0.dist-info/top_level.txt` with `core`.
 - README examples import with `from core import ChromeUserAgentPoolService` at `README.md:95-99` and `README.md:114-119`.
 
 Risk:
@@ -115,13 +115,13 @@ Installing `n-user-agent-pool` adds a generic top-level `core` package to the en
 
 Recommended action:
 
-Rename the import package to `n_user_agent_pool`. A clean public API should look like:
+Rename the import package to `core`. A clean public API should look like:
 
 ```python
-from n_user_agent_pool import ChromeUserAgentPoolService
+from core import ChromeUserAgentPoolService
 ```
 
-Internally, either move the current layer folders under `n_user_agent_pool/` or expose a stable root package while preserving the N-layer structure beneath it.
+Internally, either move the current layer folders under `core/` or expose a stable root package while preserving the N-layer structure beneath it.
 
 ### P2: Raw Keyval Proxy Examples Drift From Implementation
 
@@ -206,7 +206,7 @@ Recommended action:
 Start the README with:
 
 ```python
-from n_user_agent_pool import ChromeUserAgentPoolService
+from core import ChromeUserAgentPoolService
 
 service = ChromeUserAgentPoolService()
 print(service.latest())
@@ -246,7 +246,7 @@ This is small but visible. A root-level camelCase script makes the repo look les
 
 Recommended action:
 
-Move it to `example/user_agent_pool_example.py` or `script/run_user_agent_pool_example.py`, and update README commands.
+Move it to `example/user_agent_pool_example.py` or `script/rucore_example.py`, and update README commands.
 
 ### P3: Tests Are Good Offline Coverage, But Missing A Few Release-Critical Cases
 
@@ -355,7 +355,7 @@ Avoid positioning the package as a way to bypass bot controls or disguise scrapi
 1. Track `.gitignore`, remove the self-ignore entry, and confirm `.env`, secrets, caches, logs, and build output stay ignored.
 2. Make Keyval remote persistence opt-in, or add a required per-user/per-app namespace before any public Keyval write.
 3. Stop `activate` from printing raw `.env` lines; remove `eval` and update README to standard venv commands.
-4. Rename the installed import namespace from `core` to `n_user_agent_pool`.
+4. Rename the installed import namespace from `core` to `core`.
 5. Align `PACKAGE_USER_AGENT_STR`, raw examples, and package metadata to version `1.0.0` or a single version source.
 6. Update Keyval raw examples to match actual `GET`, `POST`, `PUT`, text-vs-JSON, safe-log, and chunk behavior.
 7. Make the README quick start use `ChromeUserAgentPoolService` first.

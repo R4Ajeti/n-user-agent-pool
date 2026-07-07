@@ -2,7 +2,7 @@
 
 ## Project
 
-Project name: `n_user_agent_pool`
+Project name: `user_agent_pool`
 
 Repository/package name: `n-user-agent-pool`
 
@@ -96,7 +96,7 @@ Behavior:
 - `latest()` returns a single latest Chrome user-agent string.
 - `latest(count)` returns up to `count` Chrome user-agent strings, ordered from newest to older.
 - `random()` returns a random Chrome user-agent string from the latest available generated pool.
-- `random()` must persist the last returned random user-agent string in Keyval.
+- `random()` must persist the last returned random user-agent string in configured state; use in-memory repo state when Keyval is not configured, and Keyval only when `KEY_VAL_BASE_URL` is explicitly set.
 - `random()` must avoid returning the exact same full user-agent string twice in a row when alternatives exist.
 - If only one user-agent exists, `random()` may return the same value again, but that edge case must be handled intentionally.
 
@@ -374,6 +374,9 @@ Rules:
 ## Keyval Persistence Rule
 
 Use Keyval in the same style as the previous project so the package can remember state between calls.
+
+Remote Keyval persistence is opt-in. Do not default to a public shared Keyval
+namespace when `KEY_VAL_BASE_URL` is unset.
 
 Suggested stored values:
 

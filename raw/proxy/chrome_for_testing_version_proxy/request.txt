@@ -6,7 +6,7 @@ GET
 
 Headers:
 Accept: application/json
-User-Agent: n-user-agent-pool/0.1.0
+User-Agent: n-user-agent-pool/1.0.0
 
 Purpose:
 Fetch the latest Chrome patch versions for known MAJOR.MINOR.BUILD combinations.

@@ -12,7 +12,7 @@ class LoggerConfigHelperTest(unittest.TestCase):
 
         try:
             logger = configureLoggerFromEnv(
-                "n_user_agent_pool_test_logger",
+                "user_agent_pool_test_logger",
                 "LOGGER",
                 "%(levelname)s:%(message)s",
             )
@@ -28,7 +28,7 @@ class LoggerConfigHelperTest(unittest.TestCase):
 
         try:
             logger = configureLoggerFromEnv(
-                "n_user_agent_pool_missing_logger",
+                "user_agent_pool_missing_logger",
                 "LOGGER",
                 "%(levelname)s:%(message)s",
             )

@@ -1,42 +1,50 @@
-Default public KeyVal endpoints:
-https://api.keyval.org/get/{hashedKey}
-https://api.keyval.org/set/{hashedKey}/{value}
+Default behavior:
+Keyval persistence is disabled when KEY_VAL_BASE_URL is not set. In that mode,
+the proxy returns cache misses for reads and false for writes without making
+HTTP requests.
 
-Default public KeyVal methods:
-GET
+Explicit public KeyVal endpoint:
+https://api.keyval.org
+
+Required public namespace:
+USER_AGENT_POOL_NAMESPACE
+
+Public read request:
+GET https://api.keyval.org/get/{namespacedHashedKey}
+
+Public write request:
+POST https://api.keyval.org/set
+Accept: application/json
+Content-Type: application/json
+User-Agent: n-user-agent-pool/1.0.0
+
+Public write payload:
+{"key":"{namespacedHashedKey}","val":"{value}"}
 
 Custom store endpoint:
-${KEY_VAL_BASE_URL}/{hashedKey}
+${KEY_VAL_BASE_URL}/{namespacedOrPlainHashedKey}
 
 Custom store methods:
 GET
 PUT
 
 Custom store headers:
-Content-Type: application/json
+Accept: application/json
+Content-Type: text/plain; charset=utf-8
 Authorization: Bearer ${KEY_VAL_AUTH_TOKEN}
 
 Purpose:
 Read and write cached user-agent pool state from a Keyval-style remote key/value
-store. The proxy hashes descriptive project keys before placing them in the URL.
-
-Default behavior:
-If KEY_VAL_BASE_URL is not set, the proxy uses https://api.keyval.org and the
-public URL API. Debug logs print the public get URL, such as:
-
-https://api.keyval.org/get/{hashedKey}
-
-The public KeyVal URL API is useful for small values. A full desktop Chrome
-user-agent string can exceed the live public value limit, so the proxy saves it
-as chunks and stores a chunk marker at the base key. Large values, such as the
-full generated user-agent list, are skipped unless a custom store is configured.
+store. The proxy hashes descriptive project keys before placing them in URLs or
+public KeyVal payloads. A configured namespace is included in public KeyVal
+hashes to avoid shared project-wide keys.
 
 Authentication:
-The public https://api.keyval.org URL API does not require authentication.
-Use KEY_VAL_AUTH_TOKEN only when a custom Keyval provider requires a bearer token.
-Do not commit real tokens, API keys, or credentials.
+The public https://api.keyval.org API does not require authentication.
+Use KEY_VAL_AUTH_TOKEN only when a custom Keyval provider requires a bearer
+token. Do not commit real tokens, API keys, or credentials.
 
 Stored values:
-- latest generated Chrome user-agent list
-- last random Chrome user-agent returned, stored raw or chunked
-- latest Chrome release-channel version map
+- latest generated Chrome user-agent list, stored as JSON and chunked when needed
+- last random Chrome user-agent returned, stored raw or chunked when needed
+- latest Chrome release-channel version map, stored as JSON and chunked when needed
