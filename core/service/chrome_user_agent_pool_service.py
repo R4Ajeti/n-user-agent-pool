@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import secrets
 import time
 from collections import defaultdict
@@ -28,6 +29,17 @@ from core.constant.chrome_user_agent_pool_constant import (
     TIMING_RESULT_JSON_KEY_STR,
     TIMING_SUCCESS_BOOL_JSON_KEY_STR,
     TIMING_TIMING_JSON_KEY_STR,
+    USER_AGENT_HISTORY_BACKEND_ENV_STR,
+    USER_AGENT_HISTORY_CHROME_VERSION_JSON_KEY_STR,
+    USER_AGENT_HISTORY_CREATED_AT_UNIX_SECOND_JSON_KEY_STR,
+    USER_AGENT_HISTORY_DEFAULT_BACKEND_STR,
+    USER_AGENT_HISTORY_FIREBASE_FIRESTORE_BACKEND_STR,
+    USER_AGENT_HISTORY_FIREBASE_REALTIME_DATABASE_BACKEND_STR,
+    USER_AGENT_HISTORY_KEY_VAL_BACKEND_STR,
+    USER_AGENT_HISTORY_MEMORY_BACKEND_STR,
+    USER_AGENT_HISTORY_PLATFORM_FAMILY_JSON_KEY_STR,
+    USER_AGENT_HISTORY_SOURCE_METHOD_JSON_KEY_STR,
+    USER_AGENT_HISTORY_USER_AGENT_JSON_KEY_STR,
     USER_AGENT_JSON_KEY_STR,
     USER_AGENT_LIST_JSON_KEY_STR,
 )
@@ -46,8 +58,17 @@ from core.proxy.chrome_for_testing_version_proxy import (
     ChromeForTestingVersionProxy,
     ChromeForTestingVersionProxyError,
 )
+from core.proxy.firebase_firestore_history_proxy import (
+    FirebaseFirestoreHistoryProxy,
+    FirebaseFirestoreHistoryProxyError,
+)
+from core.proxy.firebase_realtime_database_history_proxy import (
+    FirebaseRealtimeDatabaseHistoryProxy,
+    FirebaseRealtimeDatabaseHistoryProxyError,
+)
 from core.proxy.key_val_store_proxy import KeyValStoreProxy, KeyValStoreProxyError
 from core.repo.chrome_user_agent_pool_repo import ChromeUserAgentPoolRepo
+from core.repo.user_agent_history_repo import UserAgentHistoryRepo
 from core.service.chrome_user_agent_pool_error import (
     ChromeUserAgentPoolUnavailableError,
     ChromeVersionPayloadError,
@@ -63,7 +84,10 @@ class ChromeUserAgentPoolService:
         self,
         chromeForTestingVersionProxy: ChromeForTestingVersionProxy | None = None,
         keyValStoreProxy: KeyValStoreProxy | None = None,
+        firebaseRealtimeDatabaseHistoryProxy: FirebaseRealtimeDatabaseHistoryProxy | None = None,
+        firebaseFirestoreHistoryProxy: FirebaseFirestoreHistoryProxy | None = None,
         chromeUserAgentPoolRepo: ChromeUserAgentPoolRepo | None = None,
+        userAgentHistoryRepo: UserAgentHistoryRepo | None = None,
         randomGenerator: Any | None = None,
     ) -> None:
         configureLoggerFromEnv(
@@ -75,11 +99,20 @@ class ChromeUserAgentPoolService:
             chromeForTestingVersionProxy or ChromeForTestingVersionProxy()
         )
         self.keyValStoreProxy = keyValStoreProxy or KeyValStoreProxy()
+        self.firebaseRealtimeDatabaseHistoryProxy = (
+            firebaseRealtimeDatabaseHistoryProxy
+            or FirebaseRealtimeDatabaseHistoryProxy()
+        )
+        self.firebaseFirestoreHistoryProxy = (
+            firebaseFirestoreHistoryProxy or FirebaseFirestoreHistoryProxy()
+        )
         self.chromeUserAgentPoolRepo = chromeUserAgentPoolRepo or ChromeUserAgentPoolRepo()
+        self.userAgentHistoryRepo = userAgentHistoryRepo or UserAgentHistoryRepo()
         self.randomGenerator = randomGenerator or secrets.SystemRandom()
         logger.debug(
-            "Chrome user-agent pool service initialized randomGenerator=%s",
+            "Chrome user-agent pool service initialized randomGenerator=%s historyBackend=%s",
             type(self.randomGenerator).__name__,
+            self.resolveUserAgentHistoryBackend(),
         )
 
     def latest(self, count: int | None = None) -> str | list[str]:
@@ -164,6 +197,7 @@ class ChromeUserAgentPoolService:
 
         selectedUserAgentStr = self.chooseRandomUserAgent(candidateUserAgentList)
         self.saveLastRandomUserAgent(selectedUserAgentStr)
+        self.appendUserAgentHistory(selectedUserAgentStr, "random")
         logger.debug(
             "Random user-agent selected chromeVersion=%s platformFamily=%s",
             extractChromeVersionFromUserAgent(selectedUserAgentStr),
@@ -304,6 +338,15 @@ class ChromeUserAgentPoolService:
 
     def timingHistory(self) -> list[dict[str, object]]:
         return self.chromeUserAgentPoolRepo.getCallTimingList()
+
+    def history(self, count: int | None = None) -> list[dict[str, object]]:
+        return self.runTimedOperation("history", lambda: self._history(count))
+
+    def _history(self, count: int | None = None) -> list[dict[str, object]]:
+        if count is not None and not isinstance(count, int):
+            raise ValueError("count must be an integer.")
+
+        return self.userAgentHistoryRepo.getHistoryRecordList(count)
 
     def fetchLatestChromeVersions(self) -> list[str]:
         logger.debug("Fetching latest Chrome versions from Chrome for Testing proxy")
@@ -605,6 +648,107 @@ class ChromeUserAgentPoolService:
             extractChromeVersionFromUserAgent(userAgentStr),
             getDesktopPlatformFamily(userAgentStr),
         )
+
+    def appendUserAgentHistory(self, userAgentStr: str, sourceMethodStr: str) -> bool:
+        if not isValidChromeUserAgent(userAgentStr):
+            logger.debug("User-agent history append skipped reason=invalid_user_agent")
+            return False
+
+        historyRecordDict = self.buildUserAgentHistoryRecord(
+            userAgentStr,
+            sourceMethodStr,
+        )
+        self.userAgentHistoryRepo.appendHistoryRecord(historyRecordDict)
+        backendStr = self.resolveUserAgentHistoryBackend()
+
+        if backendStr in (
+            USER_AGENT_HISTORY_MEMORY_BACKEND_STR,
+            USER_AGENT_HISTORY_KEY_VAL_BACKEND_STR,
+        ):
+            logger.debug(
+                "User-agent history saved to repo backend=%s chromeVersion=%s platformFamily=%s",
+                backendStr,
+                historyRecordDict[USER_AGENT_HISTORY_CHROME_VERSION_JSON_KEY_STR],
+                historyRecordDict[USER_AGENT_HISTORY_PLATFORM_FAMILY_JSON_KEY_STR],
+            )
+            return True
+
+        if backendStr == USER_AGENT_HISTORY_FIREBASE_REALTIME_DATABASE_BACKEND_STR:
+            return self.safeAppendFirebaseRealtimeDatabaseHistory(historyRecordDict)
+
+        if backendStr == USER_AGENT_HISTORY_FIREBASE_FIRESTORE_BACKEND_STR:
+            return self.safeAppendFirebaseFirestoreHistory(historyRecordDict)
+
+        logger.debug(
+            "User-agent history saved to repo only reason=unsupported_backend backend=%s",
+            backendStr,
+        )
+        return False
+
+    def buildUserAgentHistoryRecord(
+        self,
+        userAgentStr: str,
+        sourceMethodStr: str,
+    ) -> dict[str, object]:
+        chromeVersionStr = extractChromeVersionFromUserAgent(userAgentStr)
+        if chromeVersionStr is None:
+            raise ValueError("Cannot build history record for invalid Chrome user-agent.")
+
+        return {
+            USER_AGENT_HISTORY_USER_AGENT_JSON_KEY_STR: userAgentStr,
+            USER_AGENT_HISTORY_CHROME_VERSION_JSON_KEY_STR: chromeVersionStr,
+            USER_AGENT_HISTORY_PLATFORM_FAMILY_JSON_KEY_STR: getDesktopPlatformFamily(userAgentStr),
+            USER_AGENT_HISTORY_SOURCE_METHOD_JSON_KEY_STR: sourceMethodStr,
+            USER_AGENT_HISTORY_CREATED_AT_UNIX_SECOND_JSON_KEY_STR: int(time.time()),
+        }
+
+    def resolveUserAgentHistoryBackend(self) -> str:
+        backendStr = os.getenv(
+            USER_AGENT_HISTORY_BACKEND_ENV_STR,
+            USER_AGENT_HISTORY_DEFAULT_BACKEND_STR,
+        )
+        if not isinstance(backendStr, str) or not backendStr.strip():
+            return USER_AGENT_HISTORY_DEFAULT_BACKEND_STR
+
+        return backendStr.strip().lower()
+
+    def safeAppendFirebaseRealtimeDatabaseHistory(
+        self,
+        historyRecordDict: dict[str, object],
+    ) -> bool:
+        try:
+            appendedBool = bool(
+                self.firebaseRealtimeDatabaseHistoryProxy.appendHistoryRecord(
+                    historyRecordDict,
+                )
+            )
+            logger.debug(
+                "Firebase Realtime Database history append completed appended=%s",
+                appendedBool,
+            )
+            return appendedBool
+        except (FirebaseRealtimeDatabaseHistoryProxyError, AttributeError, ValueError):
+            logger.debug("Firebase Realtime Database history append failed safely")
+            return False
+
+    def safeAppendFirebaseFirestoreHistory(
+        self,
+        historyRecordDict: dict[str, object],
+    ) -> bool:
+        try:
+            appendedBool = bool(
+                self.firebaseFirestoreHistoryProxy.appendHistoryRecord(
+                    historyRecordDict,
+                )
+            )
+            logger.debug(
+                "Firebase Firestore history append completed appended=%s",
+                appendedBool,
+            )
+            return appendedBool
+        except (FirebaseFirestoreHistoryProxyError, AttributeError, ValueError):
+            logger.debug("Firebase Firestore history append failed safely")
+            return False
 
     def getCachedChannelVersionMap(self) -> dict[str, str]:
         logger.debug("Reading cached Chrome channel version map")

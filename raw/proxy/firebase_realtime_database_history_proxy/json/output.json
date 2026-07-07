@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "method": "POST",
+  "url": "https://example-project-default-rtdb.firebaseio.com/userAgentHistory.json",
+  "storedRecord": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.7871.46 Safari/537.36",
+    "chromeVersion": "150.0.7871.46",
+    "platformFamily": "Windows",
+    "sourceMethod": "random",
+    "createdAtUnixSecond": 1760000000
+  }
+}

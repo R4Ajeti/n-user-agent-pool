@@ -1,3 +1,4 @@
+import os
 import random
 import unittest
 
@@ -11,6 +12,11 @@ from core.constant.chrome_user_agent_pool_constant import (
     TIMING_RESULT_JSON_KEY_STR,
     TIMING_SUCCESS_BOOL_JSON_KEY_STR,
     TIMING_TIMING_JSON_KEY_STR,
+    USER_AGENT_HISTORY_BACKEND_ENV_STR,
+    USER_AGENT_HISTORY_FIREBASE_REALTIME_DATABASE_BACKEND_STR,
+)
+from core.proxy.firebase_realtime_database_history_proxy import (
+    FirebaseRealtimeDatabaseHistoryProxyError,
 )
 from core.proxy.chrome_for_testing_version_proxy import ChromeForTestingVersionProxyError
 from core.service.chrome_user_agent_pool_error import ChromeUserAgentPoolUnavailableError
@@ -71,6 +77,18 @@ class FirstChoiceRandom:
         return valueList[0]
 
 
+class FakeUserAgentHistoryProxy:
+    def __init__(self, shouldRaiseBool=False) -> None:
+        self.shouldRaiseBool = shouldRaiseBool
+        self.historyRecordList = []
+
+    def appendHistoryRecord(self, historyRecordDict):
+        if self.shouldRaiseBool:
+            raise FirebaseRealtimeDatabaseHistoryProxyError("history failed")
+        self.historyRecordList.append(dict(historyRecordDict))
+        return True
+
+
 class ChromeUserAgentPoolServiceTest(unittest.TestCase):
     def buildService(
         self,
@@ -78,6 +96,7 @@ class ChromeUserAgentPoolServiceTest(unittest.TestCase):
         keyValStore=None,
         shouldRaiseBool=False,
         randomGenerator=None,
+        firebaseRealtimeDatabaseHistoryProxy=None,
     ):
         return ChromeUserAgentPoolService(
             chromeForTestingVersionProxy=FakeChromeForTestingVersionProxy(
@@ -89,6 +108,7 @@ class ChromeUserAgentPoolServiceTest(unittest.TestCase):
                 shouldRaiseBool=shouldRaiseBool,
             ),
             keyValStoreProxy=keyValStore or FakeKeyValStoreProxy(),
+            firebaseRealtimeDatabaseHistoryProxy=firebaseRealtimeDatabaseHistoryProxy,
             randomGenerator=randomGenerator or random.Random(7),
         )
 
@@ -128,6 +148,49 @@ class ChromeUserAgentPoolServiceTest(unittest.TestCase):
         service = self.buildService(keyValStore=keyValStore)
         userAgentStr = service.random()
         self.assertEqual(userAgentStr, keyValStore.store[KEY_VAL_LAST_RANDOM_USER_AGENT_KEY_STR])
+
+    def testRandomAppendsHistoryWhenFirebaseRealtimeBackendEnabled(self) -> None:
+        previousBackendStr = os.environ.get(USER_AGENT_HISTORY_BACKEND_ENV_STR)
+        os.environ[USER_AGENT_HISTORY_BACKEND_ENV_STR] = (
+            USER_AGENT_HISTORY_FIREBASE_REALTIME_DATABASE_BACKEND_STR
+        )
+        historyProxy = FakeUserAgentHistoryProxy()
+        try:
+            service = self.buildService(
+                firebaseRealtimeDatabaseHistoryProxy=historyProxy,
+            )
+            userAgentStr = service.random()
+        finally:
+            if previousBackendStr is None:
+                os.environ.pop(USER_AGENT_HISTORY_BACKEND_ENV_STR, None)
+            else:
+                os.environ[USER_AGENT_HISTORY_BACKEND_ENV_STR] = previousBackendStr
+
+        self.assertEqual(1, len(historyProxy.historyRecordList))
+        self.assertEqual(userAgentStr, historyProxy.historyRecordList[0]["userAgent"])
+        self.assertEqual("random", historyProxy.historyRecordList[0]["sourceMethod"])
+        self.assertEqual(1, len(service.history()))
+
+    def testRandomIgnoresHistoryPersistenceFailure(self) -> None:
+        previousBackendStr = os.environ.get(USER_AGENT_HISTORY_BACKEND_ENV_STR)
+        os.environ[USER_AGENT_HISTORY_BACKEND_ENV_STR] = (
+            USER_AGENT_HISTORY_FIREBASE_REALTIME_DATABASE_BACKEND_STR
+        )
+        try:
+            service = self.buildService(
+                firebaseRealtimeDatabaseHistoryProxy=FakeUserAgentHistoryProxy(
+                    shouldRaiseBool=True
+                ),
+            )
+            userAgentStr = service.random()
+        finally:
+            if previousBackendStr is None:
+                os.environ.pop(USER_AGENT_HISTORY_BACKEND_ENV_STR, None)
+            else:
+                os.environ[USER_AGENT_HISTORY_BACKEND_ENV_STR] = previousBackendStr
+
+        self.assertIn("Chrome/", userAgentStr)
+        self.assertEqual(1, len(service.history()))
 
     def testRandomSupportsReleaseChannelCountAndPlatformOptions(self) -> None:
         service = self.buildService(randomGenerator=FirstChoiceRandom())

@@ -1,0 +1,24 @@
+Endpoint:
+${FIREBASE_REALTIME_DATABASE_URL}/userAgentHistory.json
+
+Method:
+POST
+
+Headers:
+Accept: application/json
+Content-Type: application/json
+User-Agent: n-user-agent-pool/1.0.0
+Authorization: Bearer <decoded-token-from-env>
+
+Environment:
+FIREBASE_REALTIME_DATABASE_CREDENTIAL_BASE64 contains base64-encoded JSON with
+an in-memory token field such as accessToken, authToken, idToken, or token.
+FIREBASE_REALTIME_DATABASE_URL contains the Realtime Database base URL.
+
+Purpose:
+Append a safe user-agent history record to Firebase Realtime Database when
+USER_AGENT_HISTORY_BACKEND=firebase_realtime_database.
+
+Safety:
+The decoded Firebase credential is never logged, written to disk, or included in
+raw examples. This file intentionally uses placeholders only.

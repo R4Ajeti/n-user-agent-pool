@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "method": "POST",
+  "url": "https://firestore.googleapis.com/v1/projects/example-project/databases/(default)/documents/userAgentHistory",
+  "documentPayload": {
+    "fields": {
+      "userAgent": {
+        "stringValue": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.7871.46 Safari/537.36"
+      },
+      "chromeVersion": {
+        "stringValue": "150.0.7871.46"
+      },
+      "platformFamily": {
+        "stringValue": "Linux"
+      },
+      "sourceMethod": {
+        "stringValue": "random"
+      },
+      "createdAtUnixSecond": {
+        "integerValue": "1760000000"
+      }
+    }
+  }
+}

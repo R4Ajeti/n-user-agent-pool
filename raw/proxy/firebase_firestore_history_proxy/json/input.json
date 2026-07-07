@@ -1,0 +1,12 @@
+{
+  "credentialBase64Env": "<base64-encoded-json-credential>",
+  "projectId": "example-project",
+  "collectionPath": "userAgentHistory",
+  "historyRecord": {
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.7871.46 Safari/537.36",
+    "chromeVersion": "150.0.7871.46",
+    "platformFamily": "Linux",
+    "sourceMethod": "random",
+    "createdAtUnixSecond": 1760000000
+  }
+}

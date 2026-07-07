@@ -149,6 +149,48 @@ Stored values can include:
 
 Large public KeyVal values are stored in chunks, including JSON payloads.
 
+## Firebase History
+
+Firebase history persistence is optional. By default, `random()` records
+returned user-agent history only in memory for the current service instance.
+No Firebase configuration is required for normal package use.
+
+To append history records to Firebase Realtime Database:
+
+```bash
+export USER_AGENT_HISTORY_BACKEND="firebase_realtime_database"
+export FIREBASE_REALTIME_DATABASE_URL="https://your-project-default-rtdb.firebaseio.com"
+export FIREBASE_REALTIME_DATABASE_CREDENTIAL_BASE64="<base64-json-credential>"
+```
+
+To append history records to Firestore:
+
+```bash
+export USER_AGENT_HISTORY_BACKEND="firebase_firestore"
+export FIREBASE_FIRESTORE_PROJECT_ID="your-project-id"
+export FIREBASE_FIRESTORE_CREDENTIAL_BASE64="<base64-json-credential>"
+```
+
+The base64 value should decode to a JSON object with an in-memory bearer token
+field such as `accessToken`, `authToken`, `idToken`, or `token`. Decoded
+credentials are used only in memory and are never written to disk, raw examples,
+logs, or test fixtures.
+
+History records contain only safe metadata:
+
+```json
+{
+  "userAgent": "Mozilla/5.0 (...) Chrome/150.0.7871.46 Safari/537.36",
+  "chromeVersion": "150.0.7871.46",
+  "platformFamily": "Windows",
+  "sourceMethod": "random",
+  "createdAtUnixSecond": 1760000000
+}
+```
+
+Firebase failures do not prevent `random()` from returning a valid user-agent
+string.
+
 ## Diagnostics
 
 A verbose local runner is available when you want to inspect a ranked
@@ -205,13 +247,12 @@ Layer responsibilities:
 Current package structure:
 
 ```text
-user_agent_pool/
-  core/
-    constant/
-    helper/
-    proxy/
-    service/
-    repo/
+core/
+  constant/
+  helper/
+  proxy/
+  service/
+  repo/
 
 test/
   constant/

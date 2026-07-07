@@ -5,7 +5,11 @@ from core.service.verbose_chrome_user_agent_pool_service import (
 
 def main() -> None:
     verboseChromeUserAgentPoolService = VerboseChromeUserAgentPoolService()
-    verboseChromeUserAgentPoolService.run()
+    verboseChromeUserAgentPoolService.run(
+        releaseChannelList=["Stable"],
+        count=10,
+        platformFamilyList="Windows",
+    )
 
     print("Final selected user-agent:", verboseChromeUserAgentPoolService.finalValueStr)
     print("Ranked user-agent list:", verboseChromeUserAgentPoolService.rankedUserAgentList)
