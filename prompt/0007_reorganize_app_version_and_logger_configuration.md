@@ -10,13 +10,13 @@ levels through a shared configuration contract.
 Move the verbose runner from:
 
 ```text
-example/user_agent_pool_example.py
+example/user_agent_pool_app.py
 ```
 
 to:
 
 ```text
-app/user_agent_pool_example.py
+app/user_agent_pool_app.py
 ```
 
 Keep the application as a thin entry point that calls
@@ -29,10 +29,10 @@ prompt reference that uses the old path.
 The supported runner commands should include:
 
 ```bash
-DEBUGGING=false python3 app/user_agent_pool_example.py
-DEBUGGING=true python3 app/user_agent_pool_example.py
-LOGGER=INFO python3 app/user_agent_pool_example.py
-LOGGER=DEBUG python3 app/user_agent_pool_example.py
+DEBUGGING=false python3 app/user_agent_pool_app.py
+DEBUGGING=true python3 app/user_agent_pool_app.py
+LOGGER=INFO python3 app/user_agent_pool_app.py
+LOGGER=DEBUG python3 app/user_agent_pool_app.py
 ```
 
 ## Package Version
@@ -92,10 +92,10 @@ Keep `WARN` and the commonly mistyped `WARM` as compatibility aliases for
 Examples:
 
 ```bash
-LOGGER=WARNING python3 app/user_agent_pool_example.py
-LOGGER=30 python3 app/user_agent_pool_example.py
-LOGGER=ERROR python3 app/user_agent_pool_example.py
-LOGGER=CRITICAL python3 app/user_agent_pool_example.py
+LOGGER=WARNING python3 app/user_agent_pool_app.py
+LOGGER=30 python3 app/user_agent_pool_app.py
+LOGGER=ERROR python3 app/user_agent_pool_app.py
+LOGGER=CRITICAL python3 app/user_agent_pool_app.py
 ```
 
 ## Logging Implementation

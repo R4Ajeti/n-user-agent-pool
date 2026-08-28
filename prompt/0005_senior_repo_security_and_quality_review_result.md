@@ -246,7 +246,7 @@ This is small but visible. A root-level camelCase script makes the repo look les
 
 Recommended action:
 
-Move it to `app/user_agent_pool_example.py` or `script/rucore_example.py`, and update README commands.
+Move it to `app/user_agent_pool_app.py` or `script/rucore_example.py`, and update README commands.
 
 ### P3: Tests Are Good Offline Coverage, But Missing A Few Release-Critical Cases
 

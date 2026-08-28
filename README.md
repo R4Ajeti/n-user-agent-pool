@@ -197,12 +197,12 @@ A verbose local runner is available when you want to inspect a ranked
 user-agent pool and safe operational logs:
 
 ```bash
-DEBUGGING=false python3 app/user_agent_pool_example.py
-DEBUGGING=true python3 app/user_agent_pool_example.py
-LOGGER=INFO python3 app/user_agent_pool_example.py
-LOGGER=DEBUG python3 app/user_agent_pool_example.py
-LOGGER=WARNING python3 app/user_agent_pool_example.py
-LOGGER=CRITICAL python3 app/user_agent_pool_example.py
+DEBUGGING=false python3 app/user_agent_pool_app.py
+DEBUGGING=true python3 app/user_agent_pool_app.py
+LOGGER=INFO python3 app/user_agent_pool_app.py
+LOGGER=DEBUG python3 app/user_agent_pool_app.py
+LOGGER=WARNING python3 app/user_agent_pool_app.py
+LOGGER=CRITICAL python3 app/user_agent_pool_app.py
 ```
 
 `DEBUGGING=true` is equivalent to `LOGGER=DEBUG`, and `DEBUGGING=false` is
