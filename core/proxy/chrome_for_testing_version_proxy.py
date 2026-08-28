@@ -14,6 +14,7 @@ from core.constant.chrome_user_agent_pool_constant import (
     CHROME_FOR_TESTING_LATEST_PATCH_VERSION_URL_STR,
     CHROME_FOR_TESTING_VERSION_KEY_STR,
     CORE_LOGGER_NAME_STR,
+    DEBUGGING_ENV_STR,
     DEFAULT_TIMEOUT_SECOND_INT,
     LOGGER_FORMAT_STR,
     LOGGER_LEVEL_ENV_STR,
@@ -40,6 +41,7 @@ class ChromeForTestingVersionProxy:
             CORE_LOGGER_NAME_STR,
             LOGGER_LEVEL_ENV_STR,
             LOGGER_FORMAT_STR,
+            DEBUGGING_ENV_STR,
         )
         self.latestPatchVersionUrlStr = latestPatchVersionUrlStr
         self.lastKnownGoodVersionUrlStr = lastKnownGoodVersionUrlStr

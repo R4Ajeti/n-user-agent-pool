@@ -4,6 +4,7 @@ from core.constant.chrome_user_agent_pool_constant import (
     CHROME_FOR_TESTING_LAST_KNOWN_GOOD_VERSION_URL_STR,
     CHROME_FOR_TESTING_LATEST_PATCH_VERSION_URL_STR,
     CHROME_RELEASE_CHANNEL_LIST,
+    DEBUGGING_ENV_STR,
     KEY_VAL_DEFAULT_BASE_URL_STR,
     KEY_VAL_LAST_RANDOM_USER_AGENT_KEY_STR,
     KEY_VAL_PUBLIC_BASE_URL_STR,
@@ -33,7 +34,10 @@ class ChromeUserAgentPoolConstantTest(unittest.TestCase):
         self.assertEqual("https://api.keyval.org", KEY_VAL_PUBLIC_BASE_URL_STR)
 
     def testPackageUserAgentMatchesProjectVersion(self) -> None:
-        self.assertEqual("n-user-agent-pool/1.0.0", PACKAGE_USER_AGENT_STR)
+        self.assertEqual("n-user-agent-pool/1.0.1", PACKAGE_USER_AGENT_STR)
+
+    def testDebuggingEnvironmentNameIsDescriptive(self) -> None:
+        self.assertEqual("DEBUGGING", DEBUGGING_ENV_STR)
 
     def testSupportedPlatformFamiliesCoverDesktopTargets(self) -> None:
         self.assertIn("Windows", SUPPORTED_DESKTOP_PLATFORM_FRAGMENT_BY_FAMILY_DICT)

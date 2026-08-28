@@ -10,6 +10,7 @@ from urllib.request import Request, urlopen
 
 from core.constant.chrome_user_agent_pool_constant import (
     CORE_LOGGER_NAME_STR,
+    DEBUGGING_ENV_STR,
     DEFAULT_TIMEOUT_SECOND_INT,
     KEY_VAL_AUTH_TOKEN_ENV_STR,
     KEY_VAL_AUTHORIZATION_HEADER_STR,
@@ -54,6 +55,7 @@ class KeyValStoreProxy:
             CORE_LOGGER_NAME_STR,
             LOGGER_LEVEL_ENV_STR,
             LOGGER_FORMAT_STR,
+            DEBUGGING_ENV_STR,
         )
         self.baseUrlStr = (
             os.getenv(KEY_VAL_BASE_URL_ENV_STR, KEY_VAL_DEFAULT_BASE_URL_STR)

@@ -73,6 +73,7 @@ class FakeChromeUserAgentPoolService:
 class VerboseChromeUserAgentPoolServiceTest(unittest.TestCase):
     def testRunSetsFinalValueAndRankedUserAgentList(self) -> None:
         previousLoggerStr = os.environ.get("LOGGER")
+        previousDebuggingStr = os.environ.pop("DEBUGGING", None)
         previousKeyValBaseUrlStr = os.environ.get("KEY_VAL_BASE_URL")
         previousNamespaceStr = os.environ.get("USER_AGENT_POOL_NAMESPACE")
         os.environ["LOGGER"] = "INFO"
@@ -93,6 +94,8 @@ class VerboseChromeUserAgentPoolServiceTest(unittest.TestCase):
                 os.environ.pop("LOGGER", None)
             else:
                 os.environ["LOGGER"] = previousLoggerStr
+            if previousDebuggingStr is not None:
+                os.environ["DEBUGGING"] = previousDebuggingStr
             if previousKeyValBaseUrlStr is None:
                 os.environ.pop("KEY_VAL_BASE_URL", None)
             else:
@@ -116,6 +119,31 @@ class VerboseChromeUserAgentPoolServiceTest(unittest.TestCase):
         self.assertIn("[cache] usable saved user-agent:", outputList[5])
         self.assertIn("[run] selected user-agent:", outputList[6])
         self.assertEqual("[run] took 9.064 seconds", outputList[7])
+
+    def testGetLoggerLevelNameUsesDebuggingPrecedence(self) -> None:
+        previousLoggerStr = os.environ.get("LOGGER")
+        previousDebuggingStr = os.environ.get("DEBUGGING")
+        service = VerboseChromeUserAgentPoolService(
+            chromeUserAgentPoolService=FakeChromeUserAgentPoolService(),
+        )
+
+        try:
+            os.environ["LOGGER"] = "INFO"
+            os.environ["DEBUGGING"] = "true"
+            self.assertEqual("DEBUG", service.getLoggerLevelName())
+
+            os.environ["LOGGER"] = "DEBUG"
+            os.environ["DEBUGGING"] = "false"
+            self.assertEqual("INFO", service.getLoggerLevelName())
+        finally:
+            if previousLoggerStr is None:
+                os.environ.pop("LOGGER", None)
+            else:
+                os.environ["LOGGER"] = previousLoggerStr
+            if previousDebuggingStr is None:
+                os.environ.pop("DEBUGGING", None)
+            else:
+                os.environ["DEBUGGING"] = previousDebuggingStr
 
     def testRunAcceptsRandomOptionParameters(self) -> None:
         outputList = []

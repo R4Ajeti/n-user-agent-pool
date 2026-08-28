@@ -9,6 +9,7 @@ from typing import Protocol
 
 from core.constant.chrome_user_agent_pool_constant import (
     CORE_LOGGER_NAME_STR,
+    DEBUGGING_ENV_STR,
     KEY_VAL_BASE_URL_ENV_STR,
     KEY_VAL_DEFAULT_BASE_URL_STR,
     KEY_VAL_NAMESPACE_ENV_STR,
@@ -18,6 +19,7 @@ from core.constant.chrome_user_agent_pool_constant import (
     VERBOSE_RANKED_USER_AGENT_COUNT_INT,
 )
 from core.helper.key_val_key_hash_helper import hashKeyValKey
+from core.helper.logger_config_helper import getLoggerLevelNameFromEnv
 from core.service.chrome_user_agent_pool_service import ChromeUserAgentPoolService
 
 
@@ -192,7 +194,10 @@ class VerboseChromeUserAgentPoolService:
         return str(valueObject)
 
     def getLoggerLevelName(self) -> str:
-        levelNameStr = os.getenv(LOGGER_LEVEL_ENV_STR, "").strip().upper()
+        levelNameStr = getLoggerLevelNameFromEnv(
+            LOGGER_LEVEL_ENV_STR,
+            DEBUGGING_ENV_STR,
+        )
         return levelNameStr or "OFF"
 
     def getKeyValSafetyNote(self) -> str:

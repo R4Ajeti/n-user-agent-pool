@@ -12,6 +12,7 @@ from core.constant.chrome_user_agent_pool_constant import (
     CHANNEL_VERSION_MAP_JSON_KEY_STR,
     CHROME_RELEASE_CHANNEL_LIST,
     CORE_LOGGER_NAME_STR,
+    DEBUGGING_ENV_STR,
     DEFAULT_CHROME_RELEASE_CHANNEL_STR,
     KEY_VAL_CHANNEL_VERSION_MAP_KEY_STR,
     KEY_VAL_LAST_RANDOM_USER_AGENT_KEY_STR,
@@ -94,6 +95,7 @@ class ChromeUserAgentPoolService:
             CORE_LOGGER_NAME_STR,
             LOGGER_LEVEL_ENV_STR,
             LOGGER_FORMAT_STR,
+            DEBUGGING_ENV_STR,
         )
         self.chromeForTestingVersionProxy = (
             chromeForTestingVersionProxy or ChromeForTestingVersionProxy()

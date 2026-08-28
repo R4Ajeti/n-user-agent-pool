@@ -5,6 +5,7 @@ Goal:
 When running a script such as:
 
 ```bash
+DEBUGGING=true python testUserAgentPool.py
 LOGGER=DEBUG python testUserAgentPool.py
 ```
 
@@ -14,7 +15,9 @@ the user-agent generation flow.
 Logging requirements:
 
 1. Keep normal package usage quiet by default.
-2. Enable verbose logs when `LOGGER=DEBUG` is set.
+2. Enable verbose logs when `DEBUGGING=true` or `LOGGER=DEBUG` is set.
+   `DEBUGGING=false` is equivalent to `LOGGER=INFO`, and `DEBUGGING` takes
+   precedence when both variables are nonblank.
 3. Log the public service operation being called:
    - `latest`
    - `random`
@@ -68,19 +71,20 @@ Safety requirements:
 
 README requirements:
 
-- Document how to enable debug logs with `LOGGER=DEBUG`.
+- Document how to enable debug logs with `DEBUGGING=true` or `LOGGER=DEBUG`.
 - Show example command:
 
 ```bash
+DEBUGGING=true python testUserAgentPool.py
 LOGGER=DEBUG python testUserAgentPool.py
 ```
 
-- Mention that logs are quiet unless `LOGGER` is set.
+- Mention that logs are quiet unless `DEBUGGING` or `LOGGER` is set.
 - Explain that tokens and credentials are not logged.
 
 Testing requirements:
 
-- Add tests that verify `LOGGER=DEBUG` configures the project logger.
+- Add tests that verify `DEBUGGING` precedence and `LOGGER=DEBUG` configuration.
 - Add tests or safe checks for Keyval logging behavior without real credentials
   or live Keyval calls.
 - Keep tests offline and credential-free.

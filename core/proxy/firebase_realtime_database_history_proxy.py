@@ -10,6 +10,7 @@ from urllib.request import Request, urlopen
 
 from core.constant.chrome_user_agent_pool_constant import (
     CORE_LOGGER_NAME_STR,
+    DEBUGGING_ENV_STR,
     DEFAULT_TIMEOUT_SECOND_INT,
     FIREBASE_AUTHORIZATION_HEADER_STR,
     FIREBASE_HTTP_POST_METHOD_STR,
@@ -44,6 +45,7 @@ class FirebaseRealtimeDatabaseHistoryProxy:
             CORE_LOGGER_NAME_STR,
             LOGGER_LEVEL_ENV_STR,
             LOGGER_FORMAT_STR,
+            DEBUGGING_ENV_STR,
         )
         self.credentialBase64Str = (
             os.getenv(FIREBASE_REALTIME_DATABASE_CREDENTIAL_BASE64_ENV_STR, "")

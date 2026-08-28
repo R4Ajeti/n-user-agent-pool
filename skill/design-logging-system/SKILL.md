@@ -1,6 +1,6 @@
 ---
 name: design-logging-system
-description: Define, implement, or review the logging system for n-user-agent-pool while preserving its current LOGGER environment contract, shared logger, N-layer boundaries, verbose discovery output, safe provider diagnostics, timing events, and offline tests. Use for requests to add or change logs, choose log levels or fields, diagnose duplicate or missing output, review credential safety, document diagnostics, or test logging behavior.
+description: Define, implement, or review the logging system for n-user-agent-pool while preserving its DEBUGGING and LOGGER environment contract, shared logger, N-layer boundaries, verbose discovery output, safe provider diagnostics, timing events, and offline tests. Use for requests to add or change logs, choose log levels or fields, diagnose duplicate or missing output, review credential safety, document diagnostics, or test logging behavior.
 ---
 
 # Design Logging System
@@ -30,7 +30,7 @@ Preserve current log wording, field names, level choices, and tested behavior un
 Use the shared `user_agent_pool` logger for operational logs. Keep the explicit verbose runner as a separate user-facing report.
 
 ```text
-LOGGER environment variable
+DEBUGGING (preferred) or LOGGER environment variable
         |
         v
 configureLoggerFromEnv
@@ -67,12 +67,16 @@ Preserve these current constants and semantics:
 ```python
 CORE_LOGGER_NAME_STR = "user_agent_pool"
 LOGGER_LEVEL_ENV_STR = "LOGGER"
+DEBUGGING_ENV_STR = "DEBUGGING"
 LOGGER_FORMAT_STR = "%(asctime)s %(levelname)s %(name)s: %(message)s"
 ```
 
 Configure the logger through `configureLoggerFromEnv` from service and proxy construction paths that need it.
 
-- Return the named logger unchanged when `LOGGER` is missing or blank. This keeps normal package use quiet.
+- `DEBUGGING=true` selects `DEBUG`; `DEBUGGING=false` selects `INFO`.
+- When both variables are nonblank, `DEBUGGING` takes precedence over `LOGGER`.
+- Ignore blank `DEBUGGING` and fall back to `LOGGER`.
+- Return the named logger unchanged when both variables are missing or blank. This keeps normal package use quiet.
 - Strip and uppercase the configured level name.
 - Resolve valid standard `logging` levels dynamically.
 - Fall back to `INFO` for an invalid non-empty level.
@@ -207,7 +211,10 @@ Use `unittest`, fakes, mocks, injected clocks, and `assertLogs`. Do not call liv
 
 Cover the affected contract:
 
-- missing `LOGGER` leaves the logger at its default and adds no package output
+- missing `DEBUGGING` and `LOGGER` leaves the logger at its default and adds no package output
+- `DEBUGGING=true` enables debug flow logs
+- `DEBUGGING=false` enables info flow logs
+- `DEBUGGING` overrides `LOGGER` when both are nonblank
 - `LOGGER=DEBUG` enables debug flow logs
 - invalid non-empty levels fall back to `INFO`
 - repeated configuration does not duplicate handlers
@@ -224,11 +231,13 @@ Restore environment variables and logger state after each test. Use unique logge
 Keep the README `Diagnostics` section aligned with the implementation. Preserve examples equivalent to:
 
 ```bash
+DEBUGGING=false python3 app/user_agent_pool_example.py
+DEBUGGING=true python3 app/user_agent_pool_example.py
 LOGGER=INFO python3 app/user_agent_pool_example.py
 LOGGER=DEBUG python3 app/user_agent_pool_example.py
 ```
 
-State that logging is quiet while `LOGGER` is unset and that credentials are not logged. Document new operator-visible fields or levels only when they become part of the supported contract.
+State that logging is quiet while both variables are unset, `DEBUGGING` takes precedence, and credentials are not logged. Document new operator-visible fields or levels only when they become part of the supported contract.
 
 ## Finish with This Review
 

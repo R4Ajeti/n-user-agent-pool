@@ -54,9 +54,11 @@ Implementation requirements:
    - Never log `KEY_VAL_AUTH_TOKEN` or authorization headers.
 
 4. Add a logger configuration helper.
-   - Configure the package logger from the `LOGGER` environment variable.
+   - Configure the package logger from `DEBUGGING` or `LOGGER`, with
+     `DEBUGGING` taking precedence when both are nonblank.
    - Keep the package quiet by default.
-   - Support `LOGGER=INFO` and `LOGGER=DEBUG`.
+   - Support `DEBUGGING=false`/`LOGGER=INFO` and
+     `DEBUGGING=true`/`LOGGER=DEBUG`.
    - Add tests for default and DEBUG configuration.
 
 5. Add a verbose discovery service.
@@ -84,6 +86,8 @@ Implementation requirements:
 
 ```bash
 . ./activate
+DEBUGGING=false python testUserAgentPool.py
+DEBUGGING=true python testUserAgentPool.py
 LOGGER=INFO python testUserAgentPool.py
 LOGGER=DEBUG python testUserAgentPool.py
 ```
@@ -107,7 +111,8 @@ LOGGER=DEBUG python testUserAgentPool.py
    - Document timing helpers.
    - Document Chrome for Testing source endpoints.
    - Document optional Keyval environment variables.
-   - Document `LOGGER=INFO` and `LOGGER=DEBUG`.
+   - Document `DEBUGGING=false`/`LOGGER=INFO`,
+     `DEBUGGING=true`/`LOGGER=DEBUG`, and precedence.
    - Mention that credentials and tokens are not logged.
    - Include the offline test command.
    - Keep safety language clear: this package is for legitimate browser
@@ -144,8 +149,8 @@ Acceptance criteria:
 - Service methods still call proxies for external APIs and repos for local
   state.
 - Keyval values and URLs are logged safely.
-- `LOGGER=DEBUG` provides useful operational detail.
-- `LOGGER=INFO python testUserAgentPool.py` gives a compact readable run.
+- `DEBUGGING=true` or `LOGGER=DEBUG` provides useful operational detail.
+- `DEBUGGING=false` or `LOGGER=INFO` gives a compact readable run.
 - README reflects the current API and example workflow.
 - The test suite passes with:
 

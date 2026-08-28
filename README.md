@@ -197,9 +197,16 @@ A verbose local runner is available when you want to inspect a ranked
 user-agent pool and safe operational logs:
 
 ```bash
+DEBUGGING=false python3 app/user_agent_pool_example.py
+DEBUGGING=true python3 app/user_agent_pool_example.py
 LOGGER=INFO python3 app/user_agent_pool_example.py
 LOGGER=DEBUG python3 app/user_agent_pool_example.py
 ```
+
+`DEBUGGING=true` is equivalent to `LOGGER=DEBUG`, and `DEBUGGING=false` is
+equivalent to `LOGGER=INFO`. When both variables are nonblank, `DEBUGGING`
+takes precedence over `LOGGER`. If both are unset or blank, package logging
+remains off. Variable names are case-sensitive; values are case-insensitive.
 
 The verbose service can also be used directly:
 
