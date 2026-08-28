@@ -4,6 +4,11 @@
 # ==============================================================================
 
 
+# Local development and experimental files
+experimental-resource/*
+activate
+commands.txt
+
 # ------------------------------------------------------------------------------
 # Python bytecode / cache
 # ------------------------------------------------------------------------------
@@ -272,6 +277,5 @@ terraform.tfstate.*
 !AGENTS.md
 !skill/
 !skill/**/SKILL.md
-commands.txt
 key-val-load-test-log.txt
 key-val-load-test-result.json
