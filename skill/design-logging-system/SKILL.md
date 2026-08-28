@@ -224,8 +224,8 @@ Restore environment variables and logger state after each test. Use unique logge
 Keep the README `Diagnostics` section aligned with the implementation. Preserve examples equivalent to:
 
 ```bash
-LOGGER=INFO python3 example/user_agent_pool_example.py
-LOGGER=DEBUG python3 example/user_agent_pool_example.py
+LOGGER=INFO python3 app/user_agent_pool_example.py
+LOGGER=DEBUG python3 app/user_agent_pool_example.py
 ```
 
 State that logging is quiet while `LOGGER` is unset and that credentials are not logged. Document new operator-visible fields or levels only when they become part of the supported contract.

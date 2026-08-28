@@ -197,8 +197,8 @@ A verbose local runner is available when you want to inspect a ranked
 user-agent pool and safe operational logs:
 
 ```bash
-LOGGER=INFO python3 example/user_agent_pool_example.py
-LOGGER=DEBUG python3 example/user_agent_pool_example.py
+LOGGER=INFO python3 app/user_agent_pool_example.py
+LOGGER=DEBUG python3 app/user_agent_pool_example.py
 ```
 
 The verbose service can also be used directly:
