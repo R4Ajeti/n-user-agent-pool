@@ -85,6 +85,52 @@ class LoggerConfigHelperTest(unittest.TestCase):
 
         self.assertEqual(logging.ERROR, logger.level)
 
+    def testLoggerWarmAliasSetsWarningLevel(self) -> None:
+        os.environ["LOGGER"] = "warm"
+
+        logger = self.configureLogger()
+
+        self.assertEqual(logging.WARNING, logger.level)
+
+    def testLoggerCriticalSetsCriticalLevel(self) -> None:
+        os.environ["LOGGER"] = "critical"
+
+        logger = self.configureLogger()
+
+        self.assertEqual(logging.CRITICAL, logger.level)
+
+    def testLoggerSupportsStandardNumericLevels(self) -> None:
+        levelByValueDict = {
+            "0": logging.NOTSET,
+            "10": logging.DEBUG,
+            "20": logging.INFO,
+            "30": logging.WARNING,
+            "40": logging.ERROR,
+            "50": logging.CRITICAL,
+        }
+
+        for valueStr, expectedLevelInt in levelByValueDict.items():
+            with self.subTest(valueStr=valueStr):
+                os.environ["LOGGER"] = valueStr
+                logger = self.configureLogger()
+                self.assertEqual(expectedLevelInt, logger.level)
+
+    def testLoggerSupportsEveryStandardNamedLevel(self) -> None:
+        levelByNameDict = {
+            "NOTSET": logging.NOTSET,
+            "DEBUG": logging.DEBUG,
+            "INFO": logging.INFO,
+            "WARNING": logging.WARNING,
+            "ERROR": logging.ERROR,
+            "CRITICAL": logging.CRITICAL,
+        }
+
+        for levelNameStr, expectedLevelInt in levelByNameDict.items():
+            with self.subTest(levelNameStr=levelNameStr):
+                os.environ["LOGGER"] = levelNameStr.lower()
+                logger = self.configureLogger()
+                self.assertEqual(expectedLevelInt, logger.level)
+
     def testNonTrueDebuggingValueUsesInfoLevel(self) -> None:
         os.environ["DEBUGGING"] = "unexpected"
         os.environ["LOGGER"] = "DEBUG"

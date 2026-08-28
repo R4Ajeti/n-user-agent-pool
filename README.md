@@ -201,12 +201,28 @@ DEBUGGING=false python3 app/user_agent_pool_example.py
 DEBUGGING=true python3 app/user_agent_pool_example.py
 LOGGER=INFO python3 app/user_agent_pool_example.py
 LOGGER=DEBUG python3 app/user_agent_pool_example.py
+LOGGER=WARNING python3 app/user_agent_pool_example.py
+LOGGER=CRITICAL python3 app/user_agent_pool_example.py
 ```
 
 `DEBUGGING=true` is equivalent to `LOGGER=DEBUG`, and `DEBUGGING=false` is
 equivalent to `LOGGER=INFO`. When both variables are nonblank, `DEBUGGING`
 takes precedence over `LOGGER`. If both are unset or blank, package logging
 remains off. Variable names are case-sensitive; values are case-insensitive.
+`LOGGER` supports Python's standard named and numeric levels:
+
+| Name | Number | Intended use |
+| --- | ---: | --- |
+| `NOTSET` | `0` | Defer to the ancestor logger's effective level. |
+| `DEBUG` | `10` | Detailed diagnostic information. |
+| `INFO` | `20` | Confirmation that normal operations completed. |
+| `WARNING` | `30` | An unexpected condition or possible future problem. |
+| `ERROR` | `40` | A failure prevented an operation from completing. |
+| `CRITICAL` | `50` | A severe failure may prevent continued operation. |
+
+For example, `LOGGER=30` is equivalent to `LOGGER=WARNING`. `WARN` and the
+commonly mistyped `WARM` remain supported as aliases for `WARNING`. Invalid
+nonblank values fall back to `INFO`.
 
 The verbose service can also be used directly:
 

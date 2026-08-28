@@ -59,6 +59,9 @@ Implementation requirements:
    - Keep the package quiet by default.
    - Support `DEBUGGING=false`/`LOGGER=INFO` and
      `DEBUGGING=true`/`LOGGER=DEBUG`.
+   - Support standard named `LOGGER` levels from `NOTSET` through `CRITICAL`,
+     their numeric values `0`, `10`, `20`, `30`, `40`, and `50`, and `WARN` or
+     `WARM` as aliases for `WARNING`.
    - Add tests for default and DEBUG configuration.
 
 5. Add a verbose discovery service.

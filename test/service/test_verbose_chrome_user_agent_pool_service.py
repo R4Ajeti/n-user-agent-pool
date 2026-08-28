@@ -135,6 +135,16 @@ class VerboseChromeUserAgentPoolServiceTest(unittest.TestCase):
             os.environ["LOGGER"] = "DEBUG"
             os.environ["DEBUGGING"] = "false"
             self.assertEqual("INFO", service.getLoggerLevelName())
+
+            os.environ.pop("DEBUGGING")
+            os.environ["LOGGER"] = "warm"
+            self.assertEqual("WARNING", service.getLoggerLevelName())
+
+            os.environ["LOGGER"] = "critical"
+            self.assertEqual("CRITICAL", service.getLoggerLevelName())
+
+            os.environ["LOGGER"] = "40"
+            self.assertEqual("ERROR", service.getLoggerLevelName())
         finally:
             if previousLoggerStr is None:
                 os.environ.pop("LOGGER", None)

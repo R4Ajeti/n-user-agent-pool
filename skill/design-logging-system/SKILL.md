@@ -78,7 +78,11 @@ Configure the logger through `configureLoggerFromEnv` from service and proxy con
 - Ignore blank `DEBUGGING` and fall back to `LOGGER`.
 - Return the named logger unchanged when both variables are missing or blank. This keeps normal package use quiet.
 - Strip and uppercase the configured level name.
-- Resolve valid standard `logging` levels dynamically.
+- Resolve standard named levels `NOTSET`, `DEBUG`, `INFO`, `WARNING`, `ERROR`,
+  and `CRITICAL` dynamically.
+- Accept the corresponding numeric values `0`, `10`, `20`, `30`, `40`, and
+  `50`, normalizing them to their standard names.
+- Treat `WARN` and `WARM` as aliases for `WARNING`.
 - Fall back to `INFO` for an invalid non-empty level.
 - Set `propagate = False` only when package logging is enabled.
 - Add at most one `StreamHandler`; reuse existing handlers on later configuration calls.
@@ -216,6 +220,9 @@ Cover the affected contract:
 - `DEBUGGING=false` enables info flow logs
 - `DEBUGGING` overrides `LOGGER` when both are nonblank
 - `LOGGER=DEBUG` enables debug flow logs
+- `LOGGER=WARM` enables warning flow logs as a compatibility alias
+- `LOGGER=CRITICAL` enables critical-only flow logs
+- standard numeric `LOGGER` values resolve to the matching named level
 - invalid non-empty levels fall back to `INFO`
 - repeated configuration does not duplicate handlers
 - public methods emit expected request, generation/fallback, selection, and timing phrases

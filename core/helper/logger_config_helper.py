@@ -4,6 +4,21 @@ import logging
 import os
 
 
+def normalizeLoggerLevelName(levelValueStr: str) -> str:
+    levelNameStr = levelValueStr.strip().upper()
+    levelAliasDict = {
+        "WARN": "WARNING",
+        "WARM": "WARNING",
+        "0": "NOTSET",
+        "10": "DEBUG",
+        "20": "INFO",
+        "30": "WARNING",
+        "40": "ERROR",
+        "50": "CRITICAL",
+    }
+    return levelAliasDict.get(levelNameStr, levelNameStr)
+
+
 def getLoggerLevelNameFromEnv(
     loggerEnvNameStr: str,
     debuggingEnvNameStr: str,
@@ -12,7 +27,7 @@ def getLoggerLevelNameFromEnv(
     if debuggingValueStr:
         return "DEBUG" if debuggingValueStr == "true" else "INFO"
 
-    return os.getenv(loggerEnvNameStr, "").strip().upper()
+    return normalizeLoggerLevelName(os.getenv(loggerEnvNameStr, ""))
 
 
 def configureLoggerFromEnv(
