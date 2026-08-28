@@ -106,7 +106,7 @@ Track `.gitignore`. Remove the `.gitignore` ignore entry or replace it with `!.g
 Evidence:
 
 - `pyproject.toml:30-31` packages `include = ["core*"]`.
-- The built wheel contains `core-1.0.0.dist-info/top_level.txt` with `core`.
+- The built wheel contains `core-1.0.1.dist-info/top_level.txt` with `core`.
 - README examples import with `from core import ChromeUserAgentPoolService` at `README.md:95-99` and `README.md:114-119`.
 
 Risk:
@@ -140,17 +140,17 @@ Recommended action:
 
 Update `raw/proxy/key_val_store_proxy/request.txt`, `json/input.json`, and `json/output.json` to match public `GET` and `POST /set` behavior, custom `PUT` text writes, safe URL logging, and chunk behavior. Keep the examples credential-free.
 
-### P2: Package Version Metadata Is Inconsistent
+### P2: Package Version Metadata Must Stay Consistent
 
 Evidence:
 
-- `pyproject.toml:7` declares version `1.0.0`.
-- `core/constant/chrome_user_agent_pool_constant.py:2` sets `PACKAGE_USER_AGENT_STR = "n-user-agent-pool/0.1.0"`.
-- `raw/proxy/chrome_for_testing_version_proxy/request.txt:7-10` documents `User-Agent: n-user-agent-pool/0.1.0`.
+- `pyproject.toml:7` declares version `1.0.1`.
+- `core/constant/chrome_user_agent_pool_constant.py:2` sets `PACKAGE_USER_AGENT_STR = "n-user-agent-pool/1.0.1"`.
+- `raw/proxy/chrome_for_testing_version_proxy/request.txt:7-10` documents `User-Agent: n-user-agent-pool/1.0.1`.
 
 Risk:
 
-This is not a security flaw, but it is a public polish issue. The package identifies itself as `0.1.0` while publishing as `1.0.0`.
+This is not a security flaw, but future version drift would be a public polish issue. The package metadata, runtime user agent, and raw examples should continue to identify version `1.0.1` consistently.
 
 Recommended action:
 
@@ -356,7 +356,7 @@ Avoid positioning the package as a way to bypass bot controls or disguise scrapi
 2. Make Keyval remote persistence opt-in, or add a required per-user/per-app namespace before any public Keyval write.
 3. Stop `activate` from printing raw `.env` lines; remove `eval` and update README to standard venv commands.
 4. Rename the installed import namespace from `core` to `core`.
-5. Align `PACKAGE_USER_AGENT_STR`, raw examples, and package metadata to version `1.0.0` or a single version source.
+5. Align `PACKAGE_USER_AGENT_STR`, raw examples, and package metadata to version `1.0.1` or a single version source.
 6. Update Keyval raw examples to match actual `GET`, `POST`, `PUT`, text-vs-JSON, safe-log, and chunk behavior.
 7. Make the README quick start use `ChromeUserAgentPoolService` first.
 8. Decide which non-required service methods are stable public APIs; make everything else private or clearly internal.

@@ -1,6 +1,6 @@
 CORE_LOGGER_NAME_STR = "user_agent_pool"
-PACKAGE_VERSION_STR = "1.0.0"
-PACKAGE_USER_AGENT_STR = "n-user-agent-pool/1.0.0"
+PACKAGE_VERSION_STR = "1.0.1"
+PACKAGE_USER_AGENT_STR = "n-user-agent-pool/1.0.1"
 LOGGER_LEVEL_ENV_STR = "LOGGER"
 LOGGER_FORMAT_STR = "%(asctime)s %(levelname)s %(name)s: %(message)s"
 

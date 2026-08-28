@@ -90,7 +90,7 @@ LOGGER=DEBUG python testUserAgentPool.py
 
 7. Prepare packaging for public repository use.
    - Keep package metadata in `pyproject.toml`.
-   - Set the version to `1.0.0` when the package is ready for this milestone.
+   - Set the version to `1.0.1` when the package is ready for this milestone.
    - Ensure editable local install works.
    - Keep runtime dependencies empty unless a dependency is truly required.
    - Remove unused duplicate package wrappers if the public import path is
