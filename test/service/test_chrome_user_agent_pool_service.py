@@ -380,8 +380,8 @@ class ChromeUserAgentPoolServiceTest(unittest.TestCase):
         logTextStr = "\n".join(logContext.output)
         self.assertIn("Last random Chrome user-agent Keyval location", logTextStr)
         self.assertIn("https://api.keyval.org/get/fake-", logTextStr)
-        self.assertIn("Operation completed operation=random", logTextStr)
-        self.assertRegex(logTextStr, r"durationSecond=\d+\.\d{2}")
+        self.assertIn("operation=random", logTextStr)
+        self.assertRegex(logTextStr, r"Total run time: \d+\.\d{2} seconds operation=random")
 
 
 if __name__ == "__main__":

@@ -16,10 +16,11 @@ from core.constant.chrome_user_agent_pool_constant import (
     KEY_VAL_PUBLIC_BASE_URL_STR,
     KEY_VAL_USER_AGENT_LIST_KEY_STR,
     LOGGER_LEVEL_ENV_STR,
+    LOGGER_FORMAT_STR,
     VERBOSE_RANKED_USER_AGENT_COUNT_INT,
 )
 from core.helper.key_val_key_hash_helper import hashKeyValKey
-from core.helper.logger_config_helper import getLoggerLevelNameFromEnv
+from core.helper.logger_config_helper import formatLogMessage, getLoggerLevelNameFromEnv
 from core.service.chrome_user_agent_pool_service import ChromeUserAgentPoolService
 
 
@@ -76,54 +77,62 @@ class VerboseChromeUserAgentPoolService:
         rankedCount: int = VERBOSE_RANKED_USER_AGENT_COUNT_INT,
     ) -> str:
         startSecondFloat = self.perfCounterFunc()
-        self.outputFunc("=== User-agent pool discovery run ===")
-        self.outputFunc(
-            "[run] hashed storage key: "
-            f"{hashKeyValKey(KEY_VAL_USER_AGENT_LIST_KEY_STR, namespaceStr=self.getKeyValNamespace())}"
-        )
-        self.outputFunc(f"[run] log level: {self.getLoggerLevelName()}")
-        self.outputFunc(f"[run] note: {self.getKeyValSafetyNote()}")
-        runOptionTextStr = self.formatRunOptionText(
-            channelStr=channelStr,
-            releaseChannelList=releaseChannelList,
-            count=count,
-            platformFamilyList=platformFamilyList,
-            rankedCount=rankedCount,
-        )
-        if runOptionTextStr:
-            self.outputFunc(f"[run] options: {runOptionTextStr}")
-
-        with self.maybeMutedCoreLogger():
-            self.outputFunc("[cache] checking saved user-agent list")
-            cachedUserAgentList = self.chromeUserAgentPoolService.getCachedUserAgents()
-            if cachedUserAgentList:
-                self.outputFunc(
-                    f"[cache] usable saved user-agent: {cachedUserAgentList[0]}"
-                )
-            else:
-                self.outputFunc("[cache] no usable saved user-agent")
-
-            self.finalValueStr = self.chromeUserAgentPoolService.random(
-                channelStr=channelStr,
-                count=count,
-                platformFamilyList=platformFamilyList,
-                releaseChannelList=releaseChannelList,
+        try:
+            self.logInfo("=== User-agent pool discovery run ===")
+            self.logInfo(
+                "[run] hashed storage key: "
+                f"{hashKeyValKey(KEY_VAL_USER_AGENT_LIST_KEY_STR, namespaceStr=self.getKeyValNamespace())}"
             )
-            rankedReleaseChannelList = releaseChannelList
-            if rankedReleaseChannelList is None and channelStr is not None:
-                rankedReleaseChannelList = [channelStr]
-            self.rankedUserAgentList = self.getRankedUserAgentList(
-                selectedUserAgentStr=self.finalValueStr,
-                releaseChannelList=rankedReleaseChannelList,
+            self.logInfo(f"[run] log level: {self.getLoggerLevelName()}")
+            self.logInfo(f"[run] note: {self.getKeyValSafetyNote()}")
+            runOptionTextStr = self.formatRunOptionText(
+                channelStr=channelStr,
+                releaseChannelList=releaseChannelList,
                 count=count,
                 platformFamilyList=platformFamilyList,
                 rankedCount=rankedCount,
             )
+            if runOptionTextStr:
+                self.logInfo(f"[run] options: {runOptionTextStr}")
 
-        elapsedSecondFloat = self.perfCounterFunc() - startSecondFloat
-        self.outputFunc(f"[run] selected user-agent: {self.finalValueStr}")
-        self.outputFunc(f"[run] took {elapsedSecondFloat:.3f} seconds")
-        return self.finalValueStr
+            with self.maybeMutedCoreLogger():
+                self.logInfo("[cache] checking saved user-agent list")
+                cachedUserAgentList = self.chromeUserAgentPoolService.getCachedUserAgents()
+                if cachedUserAgentList:
+                    self.logInfo(
+                        f"[cache] usable saved user-agent: {cachedUserAgentList[0]}"
+                    )
+                else:
+                    self.logInfo("[cache] no usable saved user-agent")
+
+                self.finalValueStr = self.chromeUserAgentPoolService.random(
+                    channelStr=channelStr,
+                    count=count,
+                    platformFamilyList=platformFamilyList,
+                    releaseChannelList=releaseChannelList,
+                )
+                rankedReleaseChannelList = releaseChannelList
+                if rankedReleaseChannelList is None and channelStr is not None:
+                    rankedReleaseChannelList = [channelStr]
+                self.rankedUserAgentList = self.getRankedUserAgentList(
+                    selectedUserAgentStr=self.finalValueStr,
+                    releaseChannelList=rankedReleaseChannelList,
+                    count=count,
+                    platformFamilyList=platformFamilyList,
+                    rankedCount=rankedCount,
+                )
+
+            self.logInfo(f"[run] selected user-agent: {self.finalValueStr}")
+            return self.finalValueStr
+        finally:
+            elapsedSecondFloat = self.perfCounterFunc() - startSecondFloat
+            self.logInfo(f"Total run time: {elapsedSecondFloat:.2f} seconds operation=run")
+
+    def logInfo(self, messageStr: str) -> None:
+        if self.getLoggerLevelName() in {"WARNING", "ERROR", "CRITICAL"}:
+            return
+        for lineStr in messageStr.splitlines() or [""]:
+            self.outputFunc(formatLogMessage(lineStr, CORE_LOGGER_NAME_STR, "INFO", LOGGER_FORMAT_STR))
 
     def getRankedUserAgentList(
         self,

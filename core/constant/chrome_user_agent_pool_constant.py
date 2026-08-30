@@ -1,9 +1,9 @@
-CORE_LOGGER_NAME_STR = "user_agent_pool"
-PACKAGE_VERSION_STR = "1.0.1"
-PACKAGE_USER_AGENT_STR = "n-user-agent-pool/1.0.1"
+CORE_LOGGER_NAME_STR = "n-user-agent-pool"
+PACKAGE_VERSION_STR = "1.0.2"
+PACKAGE_USER_AGENT_STR = "n-user-agent-pool/1.0.2"
 LOGGER_LEVEL_ENV_STR = "LOGGER"
 DEBUGGING_ENV_STR = "DEBUGGING"
-LOGGER_FORMAT_STR = "%(asctime)s %(levelname)s %(name)s: %(message)s"
+LOGGER_FORMAT_STR = "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
 
 CHROME_FOR_TESTING_LATEST_PATCH_VERSION_URL_STR = (
     "https://googlechromelabs.github.io/chrome-for-testing/"

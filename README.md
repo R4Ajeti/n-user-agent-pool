@@ -212,7 +212,7 @@ remains off. Variable names are case-sensitive; values are case-insensitive.
 At INFO, the service logs the selected user-agent string (or the selected list
 for `latest(count)`) and operation timing. At DEBUG it also logs pool generation,
 cache activity and selection details. These messages are emitted by the
-`user_agent_pool` logger inside this library, including when another package
+`n-user-agent-pool` logger inside this library, including when another package
 calls `ChromeUserAgentPoolService.random()` or `latest()`. WARNING and higher
 suppress selection summaries when `DEBUGGING` is unset or blank.
 
@@ -334,3 +334,18 @@ python3 -m pip wheel . -w /tmp/n-user-agent-pool-wheel --no-deps
 ## License
 
 MIT
+
+## Log format (1.0.2)
+
+Operational logs and the verbose report use the same full timestamp with milliseconds,
+pipe separators, and package name. Public operations such as `random` and `latest`
+end with a two-decimal runtime message; the verbose runner uses `operation=run`.
+Timing records still retain success status and error type for diagnostics.
+
+```text
+2026-08-30 18:55:54,969 | INFO | n-user-agent-pool | Total run time: 22.56 seconds operation=random
+```
+
+Existing `DEBUGGING`/`LOGGER` precedence, quiet-by-default library use, and credential
+redaction remain unchanged. Explicit verbose output uses the same format through
+its injected output callback.

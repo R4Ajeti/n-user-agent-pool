@@ -972,7 +972,6 @@ class ChromeUserAgentPoolService:
             self.saveCallTiming(operationNameStr, startSecondFloat, exc)
             raise
 
-        self.saveCallTiming(operationNameStr, startSecondFloat)
         if operationNameStr in {"latest", "random", "latestByChannel"}:
             logger.info(
                 "[run] selected user-agent%s: %r operation=%s",
@@ -980,6 +979,7 @@ class ChromeUserAgentPoolService:
                 resultObject,
                 operationNameStr,
             )
+        self.saveCallTiming(operationNameStr, startSecondFloat)
         return resultObject
 
     def saveCallTiming(
@@ -1002,19 +1002,17 @@ class ChromeUserAgentPoolService:
             TIMING_FINISHED_AT_UNIX_SECOND_JSON_KEY_STR: time.time(),
         }
         self.chromeUserAgentPoolRepo.saveCallTiming(callTimingDict)
-        logger.info(
-            "Operation completed operation=%s durationSecond=%.2f success=%s errorType=%s",
-            operationNameStr,
-            roundedDurationSecondFloat,
-            errorObject is None,
-            None if errorObject is None else type(errorObject).__name__,
-        )
         logger.debug(
             "Operation timing recorded operation=%s durationSecond=%.2f success=%s errorType=%s",
             operationNameStr,
             roundedDurationSecondFloat,
             errorObject is None,
             None if errorObject is None else type(errorObject).__name__,
+        )
+        logger.info(
+            "Total run time: %.2f seconds operation=%s",
+            roundedDurationSecondFloat,
+            operationNameStr,
         )
 
     def buildResultWithTiming(self, resultObject: Any) -> dict[str, Any]:

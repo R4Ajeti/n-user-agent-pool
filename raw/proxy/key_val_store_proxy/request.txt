@@ -16,7 +16,7 @@ Public write request:
 POST https://api.keyval.org/set
 Accept: application/json
 Content-Type: application/json
-User-Agent: n-user-agent-pool/1.0.1
+User-Agent: n-user-agent-pool/1.0.2
 
 Public write payload:
 {"key":"{namespacedHashedKey}","val":"{value}"}

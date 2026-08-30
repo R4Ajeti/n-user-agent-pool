@@ -1,5 +1,6 @@
 import os
 import unittest
+from unittest.mock import patch
 
 from core.service.verbose_chrome_user_agent_pool_service import (
     VerboseChromeUserAgentPoolService,
@@ -71,6 +72,23 @@ class FakeChromeUserAgentPoolService:
 
 
 class VerboseChromeUserAgentPoolServiceTest(unittest.TestCase):
+    def testFailedRunReportsTotalTimeOnceAndPreservesError(self) -> None:
+        fakeService = FakeChromeUserAgentPoolService()
+        outputList = []
+        clockList = [10.0, 12.345]
+        service = VerboseChromeUserAgentPoolService(
+            chromeUserAgentPoolService=fakeService,
+            outputFunc=outputList.append,
+            perfCounterFunc=lambda: clockList.pop(0),
+        )
+        with patch.dict(os.environ, {"LOGGER": "INFO", "DEBUGGING": ""}), patch.object(
+            fakeService, "random", side_effect=RuntimeError("offline failure")
+        ):
+            with self.assertRaisesRegex(RuntimeError, "offline failure"):
+                service.run()
+        self.assertEqual(sum("Total run time:" in line for line in outputList), 1)
+        self.assertTrue(outputList[-1].endswith("Total run time: 2.35 seconds operation=run"))
+
     def testRunSetsFinalValueAndRankedUserAgentList(self) -> None:
         previousLoggerStr = os.environ.get("LOGGER")
         previousDebuggingStr = os.environ.pop("DEBUGGING", None)
@@ -108,6 +126,9 @@ class VerboseChromeUserAgentPoolServiceTest(unittest.TestCase):
         self.assertEqual(service.finalValueStr, resultStr)
         self.assertIn("Chrome/151.0.7922.10", service.finalValueStr)
         self.assertEqual(2, len(service.rankedUserAgentList))
+        for lineStr in outputList:
+            self.assertRegex(lineStr, r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} \| INFO \| n-user-agent-pool \| ")
+        outputList = [lineStr.split(" | ", 3)[3] for lineStr in outputList]
         self.assertEqual("=== User-agent pool discovery run ===", outputList[0])
         self.assertRegex(outputList[1], r"^\[run\] hashed storage key: [a-f0-9]{64}$")
         self.assertEqual("[run] log level: INFO", outputList[2])
@@ -118,7 +139,7 @@ class VerboseChromeUserAgentPoolServiceTest(unittest.TestCase):
         self.assertEqual("[cache] checking saved user-agent list", outputList[4])
         self.assertIn("[cache] usable saved user-agent:", outputList[5])
         self.assertIn("[run] selected user-agent:", outputList[6])
-        self.assertEqual("[run] took 9.064 seconds", outputList[7])
+        self.assertEqual("Total run time: 9.06 seconds operation=run", outputList[7])
 
     def testGetLoggerLevelNameUsesDebuggingPrecedence(self) -> None:
         previousLoggerStr = os.environ.get("LOGGER")
@@ -193,7 +214,7 @@ class VerboseChromeUserAgentPoolServiceTest(unittest.TestCase):
         self.assertEqual(2, len(service.rankedUserAgentList))
         self.assertIn(
             "[run] options: releaseChannels=Stable|Canary, count=2, platformFamilies=Linux, rankedCount=2",
-            outputList,
+            [lineStr.split(" | ", 3)[3] for lineStr in outputList],
         )
 
 

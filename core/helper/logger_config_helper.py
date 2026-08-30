@@ -4,6 +4,16 @@ import logging
 import os
 
 
+def formatLogMessage(
+    messageStr: str, loggerNameStr: str, levelStr: str, formatStr: str,
+) -> str:
+    """Format a printable record without adding handlers or changing log levels."""
+    record = logging.LogRecord(
+        loggerNameStr, getattr(logging, levelStr), "", 0, messageStr, (), None,
+    )
+    return logging.Formatter(formatStr).format(record)
+
+
 def normalizeLoggerLevelName(levelValueStr: str) -> str:
     levelNameStr = levelValueStr.strip().upper()
     levelAliasDict = {
