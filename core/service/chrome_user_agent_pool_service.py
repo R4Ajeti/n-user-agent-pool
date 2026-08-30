@@ -973,6 +973,13 @@ class ChromeUserAgentPoolService:
             raise
 
         self.saveCallTiming(operationNameStr, startSecondFloat)
+        if operationNameStr in {"latest", "random", "latestByChannel"}:
+            logger.info(
+                "[run] selected user-agent%s: %r operation=%s",
+                " list" if isinstance(resultObject, list) else "",
+                resultObject,
+                operationNameStr,
+            )
         return resultObject
 
     def saveCallTiming(

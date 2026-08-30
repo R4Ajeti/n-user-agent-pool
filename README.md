@@ -209,6 +209,13 @@ LOGGER=CRITICAL python3 app/user_agent_pool_app.py
 equivalent to `LOGGER=INFO`. When both variables are nonblank, `DEBUGGING`
 takes precedence over `LOGGER`. If both are unset or blank, package logging
 remains off. Variable names are case-sensitive; values are case-insensitive.
+At INFO, the service logs the selected user-agent string (or the selected list
+for `latest(count)`) and operation timing. At DEBUG it also logs pool generation,
+cache activity and selection details. These messages are emitted by the
+`user_agent_pool` logger inside this library, including when another package
+calls `ChromeUserAgentPoolService.random()` or `latest()`. WARNING and higher
+suppress selection summaries when `DEBUGGING` is unset or blank.
+
 `LOGGER` supports Python's standard named and numeric levels:
 
 | Name | Number | Intended use |

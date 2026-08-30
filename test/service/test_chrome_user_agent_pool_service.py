@@ -1,6 +1,9 @@
 import os
 import random
 import unittest
+import io
+import logging
+from unittest.mock import patch
 
 from core.constant.chrome_user_agent_pool_constant import (
     CORE_LOGGER_NAME_STR,
@@ -90,6 +93,42 @@ class FakeUserAgentHistoryProxy:
 
 
 class ChromeUserAgentPoolServiceTest(unittest.TestCase):
+    def testSelectedUserAgentLogsRespectEnvironmentLevel(self) -> None:
+        logger = logging.getLogger(CORE_LOGGER_NAME_STR)
+        previousHandlerList = list(logger.handlers)
+        previousLevelInt = logger.level
+        previousPropagateBool = logger.propagate
+        try:
+            for levelStr in ("info", "debug", "warning", "error"):
+                with self.subTest(level=levelStr):
+                    output = io.StringIO()
+                    handler = logging.StreamHandler(output)
+                    logger.handlers = [handler]
+                    with patch.dict(os.environ, {"LOGGER": levelStr, "DEBUGGING": ""}):
+                        service = self.buildService()
+                        selectedUserAgentStr = service.random()
+                    logTextStr = output.getvalue()
+                    if levelStr in {"info", "debug"}:
+                        self.assertIn("[run] selected user-agent:", logTextStr)
+                        self.assertIn(selectedUserAgentStr, logTextStr)
+                        self.assertEqual(logTextStr.count("[run] selected user-agent:"), 1)
+                    else:
+                        self.assertEqual(logTextStr, "")
+                    self.assertEqual("Random user-agent requested" in logTextStr, levelStr == "debug")
+        finally:
+            logger.handlers = previousHandlerList
+            logger.setLevel(previousLevelInt)
+            logger.propagate = previousPropagateBool
+
+    def testLatestLogsSelectedListAtInfo(self) -> None:
+        service = self.buildService()
+        with self.assertLogs(CORE_LOGGER_NAME_STR, level="INFO") as logContext:
+            userAgentList = service.latest(2)
+        logTextStr = "\n".join(logContext.output)
+        self.assertIn("[run] selected user-agent list:", logTextStr)
+        for userAgentStr in userAgentList:
+            self.assertIn(userAgentStr, logTextStr)
+
     def buildService(
         self,
         versionList=None,
