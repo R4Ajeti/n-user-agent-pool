@@ -49,6 +49,7 @@ from core.helper.dotted_version_format_helper import (
     sortDottedVersionList,
 )
 from core.helper.logger_config_helper import configureLoggerFromEnv
+from core.proxy.sentry_logs_proxy import sentryLogsProxy
 from core.helper.user_agent_format_helper import (
     buildChromeUserAgent,
     extractChromeVersionFromUserAgent,
@@ -97,6 +98,7 @@ class ChromeUserAgentPoolService:
             LOGGER_FORMAT_STR,
             DEBUGGING_ENV_STR,
         )
+        sentryLogsProxy.attachLogger(logger)
         self.chromeForTestingVersionProxy = (
             chromeForTestingVersionProxy or ChromeForTestingVersionProxy()
         )

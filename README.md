@@ -51,8 +51,7 @@ python3 -m pip install --upgrade pip
 python3 -m pip install -e .
 ```
 
-The package requires Python 3.10 or newer and has no required third-party
-runtime dependencies.
+The package requires Python 3.10 or newer and uses `sentry-sdk` for optional remote logging.
 
 ## Public API
 
@@ -190,6 +189,45 @@ History records contain only safe metadata:
 
 Firebase failures do not prevent `random()` from returning a valid user-agent
 string.
+
+## Sentry Logs
+
+Set these variables in the process environment (or in the application's loaded
+`.env` file). The same names work in all three repositories:
+
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `SENTRY_DSN` | Sentry project DSN; enables remote logs when nonblank | Disabled |
+| `SENTRY_ENVIRONMENT` | Deployment label, such as development or production | `development` |
+| `SENTRY_RELEASE` | Optional deployed version or commit label | Unset |
+| `SENTRY_LOG_LEVEL` | Minimum remote level: DEBUG, INFO, WARNING, ERROR, CRITICAL | `INFO` |
+
+Constructing `ChromeUserAgentPoolService` attaches the remote handler; its
+subsequent service and provider logs and the explicit verbose report are forwarded.
+Set `LOGGER=INFO` (or `DEBUGGING=false`) for operational INFO logs. Library users
+must export the settings or load their `.env` before constructing the service.
+
+No Sentry auth token is required. `WARN` is accepted; invalid remote levels fall
+back to INFO. Existing `LOGGER`/`DEBUGGING` controls still determine which local
+messages are emitted; `SENTRY_LOG_LEVEL` applies an additional remote filter.
+The SDK dependency is installed with the package, but a blank DSN leaves it inactive.
+
+Logs include `repository=n-user-agent` and `service.name=n-user-agent` attributes.
+In Sentry's Logs view, filter with `repository:n-user-agent` or group by `repository`
+when the repositories share a project. These identities are constants, independent
+of the environment variable names and existing console logger names.
+
+Each repository uses an isolated client, so it preserves a host application's
+Sentry configuration and captures only its own project messages. It does not
+turn on automatic error reporting or tracing. Existing message redaction is
+preserved; only message text and selected metadata are sent, without arbitrary
+LogRecord extras or exception locals. Debug message text can include application
+previews. Configuration failures warn once per configuration and retain local
+logging. Buffered logs flush on normal interpreter exit (up to two seconds per
+client); abrupt termination can lose buffered messages. Restart after changing
+configuration to apply it consistently to all active services.
+
+See the [Sentry Python Logs documentation](https://docs.sentry.io/platforms/python/logs/).
 
 ## Diagnostics
 

@@ -21,6 +21,7 @@ from core.constant.chrome_user_agent_pool_constant import (
 )
 from core.helper.key_val_key_hash_helper import hashKeyValKey
 from core.helper.logger_config_helper import formatLogMessage, getLoggerLevelNameFromEnv
+from core.proxy.sentry_logs_proxy import sentryLogsProxy
 from core.service.chrome_user_agent_pool_service import ChromeUserAgentPoolService
 
 
@@ -51,6 +52,7 @@ class ChromeUserAgentPoolServiceProtocol(Protocol):
         platformFamilyList: str | Sequence[str] | None = None,
     ) -> list[str]:
         ...
+
 
 
 class VerboseChromeUserAgentPoolService:
@@ -133,6 +135,7 @@ class VerboseChromeUserAgentPoolService:
             return
         for lineStr in messageStr.splitlines() or [""]:
             self.outputFunc(formatLogMessage(lineStr, CORE_LOGGER_NAME_STR, "INFO", LOGGER_FORMAT_STR))
+            sentryLogsProxy.captureMessage(lineStr, "INFO", CORE_LOGGER_NAME_STR)
 
     def getRankedUserAgentList(
         self,
