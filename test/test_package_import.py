@@ -17,6 +17,7 @@ class PackageImportTest(unittest.TestCase):
 
     def testWheelExportsCoreNamespaceOnly(self) -> None:
         repoPath = Path(__file__).resolve().parents[1]
+        nLogForgeRepoPath = repoPath.parent / "n-log-forge"
         with tempfile.TemporaryDirectory() as tempDirStr:
             tempPath = Path(tempDirStr)
             subprocess.run(
@@ -29,6 +30,7 @@ class PackageImportTest(unittest.TestCase):
                     "-w",
                     str(tempPath),
                     "--no-deps",
+                    "--no-build-isolation",
                 ],
                 check=True,
                 cwd=tempPath,
@@ -57,6 +59,7 @@ class PackageImportTest(unittest.TestCase):
                     "-c",
                     (
                         "import sys; "
+                        f"sys.path.insert(0, {str(nLogForgeRepoPath)!r}); "
                         f"sys.path.insert(0, {str(wheelPath)!r}); "
                         "from core import ChromeUserAgentPoolService; "
                         "print(ChromeUserAgentPoolService.__name__)"

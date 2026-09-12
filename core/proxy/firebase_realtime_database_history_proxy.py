@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import json
-import logging
 import os
 from collections.abc import Mapping
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+
+from n_log_forge import getLogger
 
 from core.constant.chrome_user_agent_pool_constant import (
     CORE_LOGGER_NAME_STR,
@@ -17,16 +18,15 @@ from core.constant.chrome_user_agent_pool_constant import (
     FIREBASE_JSON_CONTENT_TYPE_STR,
     FIREBASE_REALTIME_DATABASE_CREDENTIAL_BASE64_ENV_STR,
     FIREBASE_REALTIME_DATABASE_URL_ENV_STR,
-    LOGGER_FORMAT_STR,
     LOGGER_LEVEL_ENV_STR,
     PACKAGE_USER_AGENT_STR,
     USER_AGENT_HISTORY_COLLECTION_PATH_STR,
 )
 from core.helper.base64_json_decode_helper import decodeBase64JsonObject
-from core.helper.logger_config_helper import configureLoggerFromEnv
+from core.helper.logger_config_helper import configureLoggingFromEnv
 
 
-logger = logging.getLogger(CORE_LOGGER_NAME_STR)
+logger = getLogger(f"{CORE_LOGGER_NAME_STR}.{__name__}")
 
 
 class FirebaseRealtimeDatabaseHistoryProxyError(Exception):
@@ -41,10 +41,9 @@ class FirebaseRealtimeDatabaseHistoryProxy:
         historyPathStr: str = USER_AGENT_HISTORY_COLLECTION_PATH_STR,
         timeoutSecondInt: int = DEFAULT_TIMEOUT_SECOND_INT,
     ) -> None:
-        configureLoggerFromEnv(
+        configureLoggingFromEnv(
             CORE_LOGGER_NAME_STR,
             LOGGER_LEVEL_ENV_STR,
-            LOGGER_FORMAT_STR,
             DEBUGGING_ENV_STR,
         )
         self.credentialBase64Str = (

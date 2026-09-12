@@ -51,7 +51,8 @@ python3 -m pip install --upgrade pip
 python3 -m pip install -e .
 ```
 
-The package requires Python 3.10 or newer and uses `sentry-sdk` for optional remote logging.
+The package requires Python 3.14 or newer and uses `n-log-forge` for centralized
+structured logging and optional isolated Sentry delivery.
 
 ## Public API
 
@@ -197,35 +198,22 @@ Set these variables in the process environment (or in the application's loaded
 
 | Variable | Purpose | Default |
 | --- | --- | --- |
-| `SENTRY_DSN` | Sentry project DSN; enables remote logs when nonblank | Disabled |
-| `SENTRY_ENVIRONMENT` | Deployment label, such as development or production | `development` |
+| `SENTRY_DATA_SOURCE_NAME` | Sentry project DSN; enables remote logs when nonblank | Disabled |
+| `SENTRY_ENVIRONMENT` | Deployment label, such as development or production | `production` |
 | `SENTRY_RELEASE` | Optional deployed version or commit label | Unset |
-| `SENTRY_LOG_LEVEL` | Minimum remote level: DEBUG, INFO, WARNING, ERROR, CRITICAL | `INFO` |
+| `SENTRY_LEVEL` | Minimum remote level: DEBUG, INFO, WARNING, ERROR, CRITICAL | `ERROR` |
 
-Constructing `ChromeUserAgentPoolService` attaches the remote handler; its
-subsequent service and provider logs and the explicit verbose report are forwarded.
+Constructing `ChromeUserAgentPoolService` configures its `n-user-agent` logger
+hierarchy. Service and provider records flow through `n-log-forge`; the injected
+verbose report remains deterministic user-facing output.
 Set `LOGGER=INFO` (or `DEBUGGING=false`) for operational INFO logs. Library users
 must export the settings or load their `.env` before constructing the service.
 
-No Sentry auth token is required. `WARN` is accepted; invalid remote levels fall
-back to INFO. Existing `LOGGER`/`DEBUGGING` controls still determine which local
-messages are emitted; `SENTRY_LOG_LEVEL` applies an additional remote filter.
-The SDK dependency is installed with the package, but a blank DSN leaves it inactive.
-
-Logs include `repository=n-user-agent` and `service.name=n-user-agent` attributes.
-In Sentry's Logs view, filter with `repository:n-user-agent` or group by `repository`
-when the repositories share a project. These identities are constants, independent
-of the environment variable names and existing console logger names.
-
-Each repository uses an isolated client, so it preserves a host application's
-Sentry configuration and captures only its own project messages. It does not
-turn on automatic error reporting or tracing. Existing message redaction is
-preserved; only message text and selected metadata are sent, without arbitrary
-LogRecord extras or exception locals. Debug message text can include application
-previews. Configuration failures warn once per configuration and retain local
-logging. Buffered logs flush on normal interpreter exit (up to two seconds per
-client); abrupt termination can lose buffered messages. Restart after changing
-configuration to apply it consistently to all active services.
+No Sentry auth token is required. `SENTRY_LEVEL` applies after the local package
+threshold. `n-log-forge` preserves a host Sentry client, captures only records
+accepted by its owned pipeline, and retains package/source identity, timing,
+structured metadata, and requested exception tracebacks. A blank data source
+name keeps remote delivery inactive.
 
 See the [Sentry Python Logs documentation](https://docs.sentry.io/platforms/python/logs/).
 
@@ -250,7 +238,7 @@ remains off. Variable names are case-sensitive; values are case-insensitive.
 At INFO, the service logs the selected user-agent string (or the selected list
 for `latest(count)`) and operation timing. At DEBUG it also logs pool generation,
 cache activity and selection details. These messages are emitted by the
-`n-user-agent-pool` logger inside this library, including when another package
+`n-user-agent` logger hierarchy inside this library, including when another package
 calls `ChromeUserAgentPoolService.random()` or `latest()`. WARNING and higher
 suppress selection summaries when `DEBUGGING` is unset or blank.
 
@@ -375,15 +363,16 @@ MIT
 
 ## Log format (1.0.2)
 
-Operational logs and the verbose report use the same full timestamp with milliseconds,
-pipe separators, and package name. Public operations such as `random` and `latest`
-end with a two-decimal runtime message; the verbose runner uses `operation=run`.
-Timing records still retain success status and error type for diagnostics.
+Operational logs use the centralized `n-log-forge` UTC format with package,
+duration, and module source columns. Public operations such as `random` and
+`latest` end with a two-decimal runtime message; the verbose runner uses
+`operation=run`. Timing records retain success status and error type for
+diagnostics.
 
 ```text
-2026-08-30 18:55:54,969 | INFO | n-user-agent-pool | Total run time: 22.56 seconds operation=random
+2026-08-30 18:55:54.969Z | INFO     | N User Agent    | 22.56s | n-user-agent.core.service.chrome_user_agent_pool_service | Total run time: 22.56 seconds operation=random
 ```
 
 Existing `DEBUGGING`/`LOGGER` precedence, quiet-by-default library use, and credential
-redaction remain unchanged. Explicit verbose output uses the same format through
-its injected output callback.
+redaction remain unchanged. The separately injected verbose report remains plain
+text so callers and tests can format or capture it independently.

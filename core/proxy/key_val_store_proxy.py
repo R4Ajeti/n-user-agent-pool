@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import json
-import logging
 import os
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlsplit
 from urllib.request import Request, urlopen
+
+from n_log_forge import getLogger
 
 from core.constant.chrome_user_agent_pool_constant import (
     CORE_LOGGER_NAME_STR,
@@ -28,15 +29,14 @@ from core.constant.chrome_user_agent_pool_constant import (
     KEY_VAL_PUBLIC_VALUE_MAX_LENGTH_INT,
     KEY_VAL_SET_PATH_STR,
     KEY_VAL_TEXT_CONTENT_TYPE_STR,
-    LOGGER_FORMAT_STR,
     LOGGER_LEVEL_ENV_STR,
     PACKAGE_USER_AGENT_STR,
 )
 from core.helper.key_val_key_hash_helper import hashKeyValKey
-from core.helper.logger_config_helper import configureLoggerFromEnv
+from core.helper.logger_config_helper import configureLoggingFromEnv
 
 
-logger = logging.getLogger(CORE_LOGGER_NAME_STR)
+logger = getLogger(f"{CORE_LOGGER_NAME_STR}.{__name__}")
 
 
 class KeyValStoreProxyError(Exception):
@@ -51,10 +51,9 @@ class KeyValStoreProxy:
         namespaceStr: str | None = None,
         timeoutSecondInt: int = DEFAULT_TIMEOUT_SECOND_INT,
     ) -> None:
-        configureLoggerFromEnv(
+        configureLoggingFromEnv(
             CORE_LOGGER_NAME_STR,
             LOGGER_LEVEL_ENV_STR,
-            LOGGER_FORMAT_STR,
             DEBUGGING_ENV_STR,
         )
         self.baseUrlStr = (

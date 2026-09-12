@@ -126,9 +126,7 @@ class VerboseChromeUserAgentPoolServiceTest(unittest.TestCase):
         self.assertEqual(service.finalValueStr, resultStr)
         self.assertIn("Chrome/151.0.7922.10", service.finalValueStr)
         self.assertEqual(2, len(service.rankedUserAgentList))
-        for lineStr in outputList:
-            self.assertRegex(lineStr, r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} \| INFO \| n-user-agent-pool \| ")
-        outputList = [lineStr.split(" | ", 3)[3] for lineStr in outputList]
+        self.assertTrue(all(" | INFO | " not in lineStr for lineStr in outputList))
         self.assertEqual("=== User-agent pool discovery run ===", outputList[0])
         self.assertRegex(outputList[1], r"^\[run\] hashed storage key: [a-f0-9]{64}$")
         self.assertEqual("[run] log level: INFO", outputList[2])
@@ -214,7 +212,7 @@ class VerboseChromeUserAgentPoolServiceTest(unittest.TestCase):
         self.assertEqual(2, len(service.rankedUserAgentList))
         self.assertIn(
             "[run] options: releaseChannels=Stable|Canary, count=2, platformFamilies=Linux, rankedCount=2",
-            [lineStr.split(" | ", 3)[3] for lineStr in outputList],
+            outputList,
         )
 
 

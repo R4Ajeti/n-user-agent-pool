@@ -11,7 +11,7 @@ FIREBASE_FIRESTORE_PROJECT_ID= # Required only when USER_AGENT_HISTORY_BACKEND i
 FIREBASE_FIRESTORE_CREDENTIAL_BASE64= # Base64-encoded JSON credential for Firestore.
 
 # Optional Sentry Logs: blank DSN disables remote logging; no auth token needed.
-SENTRY_DSN=
-SENTRY_ENVIRONMENT=development
+SENTRY_DATA_SOURCE_NAME=
+SENTRY_ENVIRONMENT=production
 SENTRY_RELEASE=
-SENTRY_LOG_LEVEL=INFO
+SENTRY_LEVEL=ERROR

@@ -1,8 +1,0 @@
-{
-  "body": "Operation completed count=3",
-  "attributes": {
-    "repository": "n-user-agent",
-    "service.name": "n-user-agent",
-    "logger.name": "n-user-agent"
-  }
-}

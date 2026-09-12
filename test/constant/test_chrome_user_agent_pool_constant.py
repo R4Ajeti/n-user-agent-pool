@@ -34,7 +34,7 @@ class ChromeUserAgentPoolConstantTest(unittest.TestCase):
         self.assertEqual("https://api.keyval.org", KEY_VAL_PUBLIC_BASE_URL_STR)
 
     def testPackageUserAgentMatchesProjectVersion(self) -> None:
-        self.assertEqual("n-user-agent-pool/1.0.2", PACKAGE_USER_AGENT_STR)
+        self.assertEqual("n-user-agent-pool/1.0.3", PACKAGE_USER_AGENT_STR)
 
     def testDebuggingEnvironmentNameIsDescriptive(self) -> None:
         self.assertEqual("DEBUGGING", DEBUGGING_ENV_STR)

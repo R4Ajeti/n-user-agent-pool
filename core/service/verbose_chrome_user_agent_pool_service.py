@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import logging
 import os
 import time
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from typing import Protocol
+
+from n_log_forge import setPackageLevel
 
 from core.constant.chrome_user_agent_pool_constant import (
     CORE_LOGGER_NAME_STR,
@@ -16,12 +17,10 @@ from core.constant.chrome_user_agent_pool_constant import (
     KEY_VAL_PUBLIC_BASE_URL_STR,
     KEY_VAL_USER_AGENT_LIST_KEY_STR,
     LOGGER_LEVEL_ENV_STR,
-    LOGGER_FORMAT_STR,
     VERBOSE_RANKED_USER_AGENT_COUNT_INT,
 )
 from core.helper.key_val_key_hash_helper import hashKeyValKey
-from core.helper.logger_config_helper import formatLogMessage, getLoggerLevelNameFromEnv
-from core.proxy.sentry_logs_proxy import sentryLogsProxy
+from core.helper.logger_config_helper import getLoggerLevelNameFromEnv
 from core.service.chrome_user_agent_pool_service import ChromeUserAgentPoolService
 
 
@@ -134,8 +133,7 @@ class VerboseChromeUserAgentPoolService:
         if self.getLoggerLevelName() in {"WARNING", "ERROR", "CRITICAL"}:
             return
         for lineStr in messageStr.splitlines() or [""]:
-            self.outputFunc(formatLogMessage(lineStr, CORE_LOGGER_NAME_STR, "INFO", LOGGER_FORMAT_STR))
-            sentryLogsProxy.captureMessage(lineStr, "INFO", CORE_LOGGER_NAME_STR)
+            self.outputFunc(lineStr)
 
     def getRankedUserAgentList(
         self,
@@ -229,11 +227,11 @@ class VerboseChromeUserAgentPoolService:
 
     @contextmanager
     def maybeMutedCoreLogger(self) -> Iterator[None]:
-        logger = logging.getLogger(CORE_LOGGER_NAME_STR)
-        previousDisabledBool = logger.disabled
-        if self.getLoggerLevelName() == "INFO":
-            logger.disabled = True
+        levelNameStr = self.getLoggerLevelName()
+        if levelNameStr == "INFO":
+            setPackageLevel(CORE_LOGGER_NAME_STR, "WARNING")
         try:
             yield
         finally:
-            logger.disabled = previousDisabledBool
+            if levelNameStr == "INFO":
+                setPackageLevel(CORE_LOGGER_NAME_STR, levelNameStr)

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import json
-import logging
 from collections.abc import Mapping
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+
+from n_log_forge import getLogger
 
 from core.constant.chrome_user_agent_pool_constant import (
     CHROME_FOR_TESTING_BUILDS_KEY_STR,
@@ -16,14 +17,13 @@ from core.constant.chrome_user_agent_pool_constant import (
     CORE_LOGGER_NAME_STR,
     DEBUGGING_ENV_STR,
     DEFAULT_TIMEOUT_SECOND_INT,
-    LOGGER_FORMAT_STR,
     LOGGER_LEVEL_ENV_STR,
     PACKAGE_USER_AGENT_STR,
 )
-from core.helper.logger_config_helper import configureLoggerFromEnv
+from core.helper.logger_config_helper import configureLoggingFromEnv
 
 
-logger = logging.getLogger(CORE_LOGGER_NAME_STR)
+logger = getLogger(f"{CORE_LOGGER_NAME_STR}.{__name__}")
 
 
 class ChromeForTestingVersionProxyError(Exception):
@@ -37,10 +37,9 @@ class ChromeForTestingVersionProxy:
         lastKnownGoodVersionUrlStr: str = CHROME_FOR_TESTING_LAST_KNOWN_GOOD_VERSION_URL_STR,
         timeoutSecondInt: int = DEFAULT_TIMEOUT_SECOND_INT,
     ) -> None:
-        configureLoggerFromEnv(
+        configureLoggingFromEnv(
             CORE_LOGGER_NAME_STR,
             LOGGER_LEVEL_ENV_STR,
-            LOGGER_FORMAT_STR,
             DEBUGGING_ENV_STR,
         )
         self.latestPatchVersionUrlStr = latestPatchVersionUrlStr

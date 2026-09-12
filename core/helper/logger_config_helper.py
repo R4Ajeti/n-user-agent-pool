@@ -1,17 +1,8 @@
 from __future__ import annotations
 
-import logging
 import os
 
-
-def formatLogMessage(
-    messageStr: str, loggerNameStr: str, levelStr: str, formatStr: str,
-) -> str:
-    """Format a printable record without adding handlers or changing log levels."""
-    record = logging.LogRecord(
-        loggerNameStr, getattr(logging, levelStr), "", 0, messageStr, (), None,
-    )
-    return logging.Formatter(formatStr).format(record)
+from n_log_forge import configure, setPackageLevel
 
 
 def normalizeLoggerLevelName(levelValueStr: str) -> str:
@@ -40,35 +31,39 @@ def getLoggerLevelNameFromEnv(
     return normalizeLoggerLevelName(os.getenv(loggerEnvNameStr, ""))
 
 
-def configureLoggerFromEnv(
+def configureLoggingFromEnv(
     loggerNameStr: str,
     loggerEnvNameStr: str,
-    loggerFormatStr: str,
     debuggingEnvNameStr: str = "DEBUGGING",
-) -> logging.Logger:
-    logger = logging.getLogger(loggerNameStr)
+) -> str | None:
+    """Configure n-log-forge and the exact package hierarchy from the environment."""
     levelNameStr = getLoggerLevelNameFromEnv(
         loggerEnvNameStr,
         debuggingEnvNameStr,
     )
+    if levelNameStr and levelNameStr not in {
+        "NOTSET", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL",
+    }:
+        levelNameStr = "INFO"
 
-    if not levelNameStr:
-        return logger
-
-    levelObject = getattr(logging, levelNameStr, None)
-    if not isinstance(levelObject, int):
-        levelObject = logging.INFO
-
-    logger.setLevel(levelObject)
-    logger.propagate = False
-
-    if not any(isinstance(handler, logging.StreamHandler) for handler in logger.handlers):
-        handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter(loggerFormatStr))
-        logger.addHandler(handler)
-
-    for handler in logger.handlers:
-        if isinstance(handler, logging.StreamHandler):
-            handler.setLevel(levelObject)
-
-    return logger
+    originalLoggerValueStr = os.environ.get(loggerEnvNameStr)
+    originalDebuggingValueStr = os.environ.get(debuggingEnvNameStr)
+    try:
+        if originalLoggerValueStr is not None and levelNameStr:
+            os.environ[loggerEnvNameStr] = levelNameStr
+        if originalDebuggingValueStr is not None and originalDebuggingValueStr.strip():
+            os.environ[debuggingEnvNameStr] = (
+                "true" if originalDebuggingValueStr.strip().lower() == "true" else "false"
+            )
+        configure(manageRootLevel=False)
+    finally:
+        if originalLoggerValueStr is None:
+            os.environ.pop(loggerEnvNameStr, None)
+        else:
+            os.environ[loggerEnvNameStr] = originalLoggerValueStr
+        if originalDebuggingValueStr is None:
+            os.environ.pop(debuggingEnvNameStr, None)
+        else:
+            os.environ[debuggingEnvNameStr] = originalDebuggingValueStr
+    setPackageLevel(loggerNameStr, levelNameStr or "CRITICAL")
+    return levelNameStr or None

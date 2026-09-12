@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-import logging
 import os
 import secrets
 import time
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from typing import Any, TypeVar
+
+from n_log_forge import getLogger
 
 from core.constant.chrome_user_agent_pool_constant import (
     CHANNEL_VERSION_MAP_JSON_KEY_STR,
@@ -17,7 +18,6 @@ from core.constant.chrome_user_agent_pool_constant import (
     KEY_VAL_CHANNEL_VERSION_MAP_KEY_STR,
     KEY_VAL_LAST_RANDOM_USER_AGENT_KEY_STR,
     KEY_VAL_USER_AGENT_LIST_KEY_STR,
-    LOGGER_FORMAT_STR,
     LOGGER_LEVEL_ENV_STR,
     MAX_CHROME_VERSION_COUNT_INT,
     SUPPORTED_DESKTOP_PLATFORM_FRAGMENT_BY_FAMILY_DICT,
@@ -48,8 +48,7 @@ from core.helper.dotted_version_format_helper import (
     isValidDottedVersion,
     sortDottedVersionList,
 )
-from core.helper.logger_config_helper import configureLoggerFromEnv
-from core.proxy.sentry_logs_proxy import sentryLogsProxy
+from core.helper.logger_config_helper import configureLoggingFromEnv
 from core.helper.user_agent_format_helper import (
     buildChromeUserAgent,
     extractChromeVersionFromUserAgent,
@@ -78,7 +77,7 @@ from core.service.chrome_user_agent_pool_error import (
 
 
 ResultType = TypeVar("ResultType")
-logger = logging.getLogger(CORE_LOGGER_NAME_STR)
+logger = getLogger(f"{CORE_LOGGER_NAME_STR}.{__name__}")
 
 
 class ChromeUserAgentPoolService:
@@ -92,13 +91,11 @@ class ChromeUserAgentPoolService:
         userAgentHistoryRepo: UserAgentHistoryRepo | None = None,
         randomGenerator: Any | None = None,
     ) -> None:
-        configureLoggerFromEnv(
+        configureLoggingFromEnv(
             CORE_LOGGER_NAME_STR,
             LOGGER_LEVEL_ENV_STR,
-            LOGGER_FORMAT_STR,
             DEBUGGING_ENV_STR,
         )
-        sentryLogsProxy.attachLogger(logger)
         self.chromeForTestingVersionProxy = (
             chromeForTestingVersionProxy or ChromeForTestingVersionProxy()
         )
@@ -966,31 +963,32 @@ class ChromeUserAgentPoolService:
         operationNameStr: str,
         operationFunc: Callable[[], ResultType],
     ) -> ResultType:
-        startSecondFloat = time.perf_counter()
-
+        timer = logger.startTimer(operationNameStr)
         try:
-            resultObject = operationFunc()
-        except Exception as exc:
-            self.saveCallTiming(operationNameStr, startSecondFloat, exc)
-            raise
+            try:
+                resultObject = operationFunc()
+            except Exception as exc:
+                self.saveCallTiming(operationNameStr, timer.elapsedSeconds, exc)
+                raise
 
-        if operationNameStr in {"latest", "random", "latestByChannel"}:
-            logger.info(
-                "[run] selected user-agent%s: %r operation=%s",
-                " list" if isinstance(resultObject, list) else "",
-                resultObject,
-                operationNameStr,
-            )
-        self.saveCallTiming(operationNameStr, startSecondFloat)
-        return resultObject
+            if operationNameStr in {"latest", "random", "latestByChannel"}:
+                logger.info(
+                    "[run] selected user-agent%s: %r operation=%s",
+                    " list" if isinstance(resultObject, list) else "",
+                    resultObject,
+                    operationNameStr,
+                )
+            self.saveCallTiming(operationNameStr, timer.elapsedSeconds)
+            return resultObject
+        finally:
+            timer.stop()
 
     def saveCallTiming(
         self,
         operationNameStr: str,
-        startSecondFloat: float,
+        durationSecondFloat: float,
         errorObject: Exception | None = None,
     ) -> None:
-        durationSecondFloat = time.perf_counter() - startSecondFloat
         roundedDurationSecondFloat = round(durationSecondFloat, 2)
         roundedDurationMillisecondFloat = round(durationSecondFloat * 1000, 2)
         callTimingDict: dict[str, object] = {

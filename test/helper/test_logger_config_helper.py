@@ -1,8 +1,7 @@
-import logging
 import os
 import unittest
 
-from core.helper.logger_config_helper import configureLoggerFromEnv
+from core.helper.logger_config_helper import configureLoggingFromEnv
 
 
 class LoggerConfigHelperTest(unittest.TestCase):
@@ -11,15 +10,11 @@ class LoggerConfigHelperTest(unittest.TestCase):
         self.previousDebuggingValueStr = os.environ.get("DEBUGGING")
         os.environ.pop("LOGGER", None)
         os.environ.pop("DEBUGGING", None)
-        self.loggerNameStr = f"user_agent_pool_{self._testMethodName}"
+        self.loggerNameStr = f"n-user-agent.test.{self._testMethodName}"
 
     def tearDown(self) -> None:
         self.restoreEnvironmentValue("LOGGER", self.previousLoggerValueStr)
         self.restoreEnvironmentValue("DEBUGGING", self.previousDebuggingValueStr)
-        logger = logging.getLogger(self.loggerNameStr)
-        logger.handlers.clear()
-        logger.setLevel(logging.NOTSET)
-        logger.propagate = True
 
     def restoreEnvironmentValue(self, nameStr: str, valueStr: str | None) -> None:
         if valueStr is None:
@@ -27,117 +22,54 @@ class LoggerConfigHelperTest(unittest.TestCase):
         else:
             os.environ[nameStr] = valueStr
 
-    def configureLogger(self) -> logging.Logger:
-        return configureLoggerFromEnv(
+    def configureLogger(self) -> str | None:
+        return configureLoggingFromEnv(
             self.loggerNameStr,
             "LOGGER",
-            "%(levelname)s:%(message)s",
             "DEBUGGING",
         )
 
-    def testConfigureLoggerFromEnvSetsDebugLevelFromLogger(self) -> None:
+    def testLoggerLevelConfiguresDebug(self) -> None:
         os.environ["LOGGER"] = "DEBUG"
+        self.assertEqual("DEBUG", self.configureLogger())
 
-        logger = self.configureLogger()
+    def testMissingControlsKeepPackageQuiet(self) -> None:
+        self.assertIsNone(self.configureLogger())
 
-        self.assertEqual(logging.DEBUG, logger.level)
-
-    def testConfigureLoggerFromEnvKeepsDefaultWhenBothAreMissing(self) -> None:
-        logger = self.configureLogger()
-
-        self.assertEqual(logging.NOTSET, logger.level)
-
-    def testDebuggingTrueSetsDebugLevel(self) -> None:
+    def testDebuggingTrueSelectsDebug(self) -> None:
         os.environ["DEBUGGING"] = "true"
+        self.assertEqual("DEBUG", self.configureLogger())
 
-        logger = self.configureLogger()
-
-        self.assertEqual(logging.DEBUG, logger.level)
-
-    def testDebuggingFalseSetsInfoLevel(self) -> None:
+    def testDebuggingFalseSelectsInfo(self) -> None:
         os.environ["DEBUGGING"] = "false"
+        self.assertEqual("INFO", self.configureLogger())
 
-        logger = self.configureLogger()
-
-        self.assertEqual(logging.INFO, logger.level)
-
-    def testDebuggingTrueOverridesLoggerInfo(self) -> None:
-        os.environ["DEBUGGING"] = "true"
-        os.environ["LOGGER"] = "INFO"
-
-        logger = self.configureLogger()
-
-        self.assertEqual(logging.DEBUG, logger.level)
-
-    def testDebuggingFalseOverridesLoggerDebug(self) -> None:
-        os.environ["DEBUGGING"] = "false"
-        os.environ["LOGGER"] = "DEBUG"
-
-        logger = self.configureLogger()
-
-        self.assertEqual(logging.INFO, logger.level)
+    def testDebuggingOverridesLogger(self) -> None:
+        os.environ.update(DEBUGGING="false", LOGGER="DEBUG")
+        self.assertEqual("INFO", self.configureLogger())
 
     def testBlankDebuggingFallsBackToLogger(self) -> None:
-        os.environ["DEBUGGING"] = "  "
-        os.environ["LOGGER"] = "ERROR"
+        os.environ.update(DEBUGGING="  ", LOGGER="ERROR")
+        self.assertEqual("ERROR", self.configureLogger())
 
-        logger = self.configureLogger()
-
-        self.assertEqual(logging.ERROR, logger.level)
-
-    def testLoggerWarmAliasSetsWarningLevel(self) -> None:
-        os.environ["LOGGER"] = "warm"
-
-        logger = self.configureLogger()
-
-        self.assertEqual(logging.WARNING, logger.level)
-
-    def testLoggerCriticalSetsCriticalLevel(self) -> None:
-        os.environ["LOGGER"] = "critical"
-
-        logger = self.configureLogger()
-
-        self.assertEqual(logging.CRITICAL, logger.level)
-
-    def testLoggerSupportsStandardNumericLevels(self) -> None:
-        levelByValueDict = {
-            "0": logging.NOTSET,
-            "10": logging.DEBUG,
-            "20": logging.INFO,
-            "30": logging.WARNING,
-            "40": logging.ERROR,
-            "50": logging.CRITICAL,
+    def testAliasesAndNumericLevelsAreNormalized(self) -> None:
+        expectedByValueDict = {
+            "warm": "WARNING",
+            "0": "NOTSET",
+            "10": "DEBUG",
+            "20": "INFO",
+            "30": "WARNING",
+            "40": "ERROR",
+            "50": "CRITICAL",
         }
-
-        for valueStr, expectedLevelInt in levelByValueDict.items():
-            with self.subTest(valueStr=valueStr):
+        for valueStr, expectedLevelStr in expectedByValueDict.items():
+            with self.subTest(value=valueStr):
                 os.environ["LOGGER"] = valueStr
-                logger = self.configureLogger()
-                self.assertEqual(expectedLevelInt, logger.level)
+                self.assertEqual(expectedLevelStr, self.configureLogger())
 
-    def testLoggerSupportsEveryStandardNamedLevel(self) -> None:
-        levelByNameDict = {
-            "NOTSET": logging.NOTSET,
-            "DEBUG": logging.DEBUG,
-            "INFO": logging.INFO,
-            "WARNING": logging.WARNING,
-            "ERROR": logging.ERROR,
-            "CRITICAL": logging.CRITICAL,
-        }
-
-        for levelNameStr, expectedLevelInt in levelByNameDict.items():
-            with self.subTest(levelNameStr=levelNameStr):
-                os.environ["LOGGER"] = levelNameStr.lower()
-                logger = self.configureLogger()
-                self.assertEqual(expectedLevelInt, logger.level)
-
-    def testNonTrueDebuggingValueUsesInfoLevel(self) -> None:
-        os.environ["DEBUGGING"] = "unexpected"
-        os.environ["LOGGER"] = "DEBUG"
-
-        logger = self.configureLogger()
-
-        self.assertEqual(logging.INFO, logger.level)
+    def testInvalidLoggerFallsBackToInfo(self) -> None:
+        os.environ["LOGGER"] = "verbose"
+        self.assertEqual("INFO", self.configureLogger())
 
 
 if __name__ == "__main__":
