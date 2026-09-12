@@ -6,7 +6,7 @@ from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from typing import Protocol
 
-from n_log_forge import setPackageLevel
+from n_log_forge import getLogger, setPackageLevel
 
 from core.constant.chrome_user_agent_pool_constant import (
     CORE_LOGGER_NAME_STR,
@@ -20,8 +20,14 @@ from core.constant.chrome_user_agent_pool_constant import (
     VERBOSE_RANKED_USER_AGENT_COUNT_INT,
 )
 from core.helper.key_val_key_hash_helper import hashKeyValKey
-from core.helper.logger_config_helper import getLoggerLevelNameFromEnv
+from core.helper.logger_config_helper import (
+    configureLoggingFromEnv,
+    getLoggerLevelNameFromEnv,
+)
 from core.service.chrome_user_agent_pool_service import ChromeUserAgentPoolService
+
+
+logger = getLogger(f"{CORE_LOGGER_NAME_STR}.{__name__}")
 
 
 class ChromeUserAgentPoolRepoProtocol(Protocol):
@@ -58,7 +64,7 @@ class VerboseChromeUserAgentPoolService:
     def __init__(
         self,
         chromeUserAgentPoolService: ChromeUserAgentPoolServiceProtocol | None = None,
-        outputFunc: Callable[[str], None] = print,
+        outputFunc: Callable[[str], None] | None = None,
         perfCounterFunc: Callable[[], float] = time.perf_counter,
     ) -> None:
         self.chromeUserAgentPoolService = (
@@ -77,6 +83,12 @@ class VerboseChromeUserAgentPoolService:
         platformFamilyList: str | Sequence[str] | None = None,
         rankedCount: int = VERBOSE_RANKED_USER_AGENT_COUNT_INT,
     ) -> str:
+        if self.outputFunc is None:
+            configureLoggingFromEnv(
+                f"{CORE_LOGGER_NAME_STR}.{__name__}",
+                LOGGER_LEVEL_ENV_STR,
+                DEBUGGING_ENV_STR,
+            )
         startSecondFloat = self.perfCounterFunc()
         try:
             self.logInfo("=== User-agent pool discovery run ===")
@@ -133,7 +145,10 @@ class VerboseChromeUserAgentPoolService:
         if self.getLoggerLevelName() in {"WARNING", "ERROR", "CRITICAL"}:
             return
         for lineStr in messageStr.splitlines() or [""]:
-            self.outputFunc(lineStr)
+            if self.outputFunc is None:
+                logger.info("%s", lineStr)
+            else:
+                self.outputFunc(lineStr)
 
     def getRankedUserAgentList(
         self,

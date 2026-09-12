@@ -1,4 +1,7 @@
 import os
+from pathlib import Path
+import subprocess
+import sys
 import unittest
 from unittest.mock import patch
 
@@ -72,6 +75,37 @@ class FakeChromeUserAgentPoolService:
 
 
 class VerboseChromeUserAgentPoolServiceTest(unittest.TestCase):
+    def testDefaultOutputUsesForgeFormatIncludingCacheMessages(self) -> None:
+        scriptStr = """
+from test.service.test_verbose_chrome_user_agent_pool_service import FakeChromeUserAgentPoolService
+from core.service.verbose_chrome_user_agent_pool_service import VerboseChromeUserAgentPoolService
+from n_log_forge import flush
+VerboseChromeUserAgentPoolService(
+    chromeUserAgentPoolService=FakeChromeUserAgentPoolService(),
+).run()
+assert flush()
+"""
+        for debuggingStr in ("false", "true"):
+            with self.subTest(debugging=debuggingStr):
+                result = subprocess.run(
+                    [sys.executable, "-c", scriptStr],
+                    cwd=Path(__file__).resolve().parents[2],
+                    env={**os.environ, "DEBUGGING": debuggingStr, "LOGGER": "INFO"},
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                )
+                lineList = (result.stdout + result.stderr).splitlines()
+                self.assertEqual(8, len(lineList))
+                for lineStr in lineList:
+                    self.assertRegex(
+                        lineStr,
+                        r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}Z"
+                        r" \| INFO\s+\| N User Agent\s+\| .* \| "
+                        r"n-user-agent\.core\.service\.verbose_chrome_user_agent_pool_service \| ",
+                    )
+                self.assertIn("[cache] checking saved user-agent list", lineList[4])
+
     def testFailedRunReportsTotalTimeOnceAndPreservesError(self) -> None:
         fakeService = FakeChromeUserAgentPoolService()
         outputList = []
